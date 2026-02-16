@@ -1,0 +1,8 @@
+<section class="page-head">
+  <h1>Новый видео-пост</h1>
+  <%= link_to "Назад к ленте", root_path, class: "button button--secondary" %>
+</section>
+
+<section class="panel">
+  <%= render "form", post: @post %>
+</section>

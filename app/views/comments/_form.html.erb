@@ -1,0 +1,13 @@
+<%= form_with model: [post, comment] do |form| %>
+  <div class="field">
+    <%= form.label :author_name, "Имя" %>
+    <%= form.text_field :author_name, required: true, maxlength: 80 %>
+  </div>
+
+  <div class="field">
+    <%= form.label :body, "Комментарий" %>
+    <%= form.text_area :body, rows: 4, required: true, maxlength: 1000 %>
+  </div>
+
+  <%= form.submit submit_label, class: "button" %>
+<% end %>

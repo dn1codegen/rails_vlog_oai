@@ -1,0 +1,25 @@
+<section class="page-head">
+  <h1>Вход</h1>
+  <%= link_to "Назад к ленте", root_path, class: "button button--secondary" %>
+</section>
+
+<section class="panel">
+  <%= form_with url: session_path do |form| %>
+    <div class="field">
+      <%= form.label :email, "Email" %>
+      <%= form.email_field :email, required: true, autocomplete: "email" %>
+    </div>
+
+    <div class="field">
+      <%= form.label :password, "Пароль" %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+    </div>
+
+    <%= form.submit "Войти", class: "button" %>
+  <% end %>
+
+  <p class="post-meta">
+    Нет аккаунта?
+    <%= link_to "Зарегистрироваться", new_registration_path %>
+  </p>
+</section>

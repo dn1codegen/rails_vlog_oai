@@ -1,0 +1,19 @@
+<section class="page-head">
+  <h1>Редактировать комментарий</h1>
+  <%= link_to "Назад к посту", post_path(@post, anchor: "comments"), class: "button button--secondary" %>
+</section>
+
+<section class="panel">
+  <% if @comment.errors.any? %>
+    <section class="error-box">
+      <h3>Комментарий не сохранен</h3>
+      <ul>
+        <% @comment.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%= render "comments/form", post: @post, comment: @comment, submit_label: "Сохранить комментарий" %>
+</section>

@@ -1,0 +1,8 @@
+<section class="page-head">
+  <h1>Редактировать пост</h1>
+  <%= link_to "Назад к посту", post_path(@post), class: "button button--secondary" %>
+</section>
+
+<section class="panel">
+  <%= render "form", post: @post %>
+</section>

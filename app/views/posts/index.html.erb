@@ -1,0 +1,40 @@
+<section class="page-head">
+  <h1>Лента видео</h1>
+
+</section>
+
+<% if @posts.any? %>
+  <% @posts.each do |post| %>
+    <article class="post-card">
+      <% if post.video.attached? %>
+        <%= link_to post_path(post), class: "preview-link" do %>
+          <% if post.thumbnail.attached? %>
+            <%= image_tag post.thumbnail,
+                          class: "video video-preview",
+                          alt: "Превью для #{post.title}",
+                          loading: "lazy" %>
+          <% else %>
+            <div class="video video-placeholder">
+              <span>Превью создается...</span>
+            </div>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <h2><%= link_to post.title, post_path(post) %></h2>
+
+      <% if post.description.present? %>
+        <p><%= truncate(post.description, length: 220) %></p>
+      <% end %>
+
+      <p class="post-meta">
+        Опубликовано <%= l(post.created_at, format: :short) %> •
+        Комментариев: <%= post.comments.size %>
+      </p>
+    </article>
+  <% end %>
+<% else %>
+  <section class="panel">
+    <p class="empty">Пока нет постов. Создайте первый видео-пост.</p>
+  </section>
+<% end %>
