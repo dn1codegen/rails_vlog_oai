@@ -254,6 +254,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
   test "shows video and audio codec info on post page" do
     post_record = create_post_record
+    expected_file_size = ApplicationController.helpers.format_file_size(post_record.video.blob.byte_size)
 
     media_result = MediaStreamInspector::Result.new(
       status: :ok,
@@ -271,16 +272,15 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match "Информация о видео", response.body
-    assert_match "Видео кодек:", response.body
+    assert_match(/<strong>\s*Видео:\s*<\/strong>/, response.body)
     assert_match "hevc", response.body
-    assert_match "Разрешение:", response.body
     assert_match "3840x2160", response.body
-    assert_match "Видео битрейт:", response.body
     assert_match "8.5 Мбит/с", response.body
-    assert_match "Аудио кодек:", response.body
+    assert_match(/<strong>\s*Аудио:\s*<\/strong>/, response.body)
     assert_match "aac", response.body
-    assert_match "Аудио битрейт:", response.body
     assert_match "192 кбит/с", response.body
+    assert_match(/<strong>\s*Размер файла:\s*<\/strong>/, response.body)
+    assert_match Regexp.new(Regexp.escape(expected_file_size)), response.body
   end
 
   private

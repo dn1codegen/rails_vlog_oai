@@ -58,6 +58,10 @@
           Кодеки: <%= @media_info.message.presence || @media_info.status %>
         </span>
       <% end %>
+      <span class="media-tag">
+        <strong>Размер файла:</strong>
+        <%= format_file_size(@post.video.blob.byte_size) %>
+      </span>
     </div>
   <% end %>
 
