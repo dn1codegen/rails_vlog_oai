@@ -1,0 +1,36 @@
+<div class="reaction-bar">
+  <div class="reaction-counts">
+    <span class="reaction-count">Лайки: <strong><%= post.likes_count %></strong></span>
+    <span class="reaction-count">Дизлайки: <strong><%= post.dislikes_count %></strong></span>
+  </div>
+
+  <% if user_signed_in? %>
+    <div class="reaction-actions">
+      <% like_classes = [ "button", "button--secondary", "button--small" ] %>
+      <% like_classes << "reaction-button--active" if user_reaction&.kind == "like" %>
+      <% dislike_classes = [ "button", "button--secondary", "button--small" ] %>
+      <% dislike_classes << "reaction-button--active" if user_reaction&.kind == "dislike" %>
+
+      <%= button_to post_reaction_path(post, kind: "like"),
+                    method: :post,
+                    class: [ *like_classes, "reaction-icon-button" ].join(" "),
+                    form: { class: "inline-form" },
+                    "aria-label": "Лайк",
+                    title: "Лайк" do %>
+        <span class="reaction-icon" aria-hidden="true">👍</span>
+      <% end %>
+      <%= button_to post_reaction_path(post, kind: "dislike"),
+                    method: :post,
+                    class: [ *dislike_classes, "reaction-icon-button" ].join(" "),
+                    form: { class: "inline-form" },
+                    "aria-label": "Дизлайк",
+                    title: "Дизлайк" do %>
+        <span class="reaction-icon" aria-hidden="true">👎</span>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="reaction-login-hint">
+      <%= link_to "Войдите", new_session_path %>, чтобы оценить пост.
+    </p>
+  <% end %>
+</div>

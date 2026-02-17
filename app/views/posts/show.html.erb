@@ -4,34 +4,36 @@
 
 <article class="post-card">
   <% if @post.video.attached? %>
-    <% if @post.thumbnail.attached? %>
-      <% frame_urls = @preview_frames.map { |attachment| url_for(attachment) } %>
-      <% frame_urls = [url_for(@post.thumbnail)] if frame_urls.empty? %>
+    <div class="post-card-media">
+      <% if @post.thumbnail.attached? %>
+        <% frame_urls = @preview_frames.map { |attachment| url_for(attachment) } %>
+        <% frame_urls = [url_for(@post.thumbnail)] if frame_urls.empty? %>
 
-      <section class="video-player"
-               data-controller="video-preview"
-               data-video-preview-frame-urls-value="<%= frame_urls.to_json %>">
-        <button type="button"
-                class="video-preview-button"
-                data-video-preview-target="preview"
-                data-action="mouseenter->video-preview#selectFrame mousemove->video-preview#selectFrame mouseleave->video-preview#resetPreview click->video-preview#play"
-                aria-label="Воспроизвести видео">
-          <%= image_tag frame_urls.first,
-                        class: "video video-preview",
-                        alt: "Превью #{@post.title}",
-                        data: { video_preview_target: "image" } %>
-          <span class="video-preview-play">▶</span>
-        </button>
+        <section class="video-player"
+                 data-controller="video-preview"
+                 data-video-preview-frame-urls-value="<%= frame_urls.to_json %>">
+          <button type="button"
+                  class="video-preview-button"
+                  data-video-preview-target="preview"
+                  data-action="mouseenter->video-preview#selectFrame mousemove->video-preview#selectFrame mouseleave->video-preview#resetPreview click->video-preview#play"
+                  aria-label="Воспроизвести видео">
+            <%= image_tag frame_urls.first,
+                          class: "video video-preview",
+                          alt: "Превью #{@post.title}",
+                          data: { video_preview_target: "image" } %>
+            <span class="video-preview-play">▶</span>
+          </button>
 
-        <%= video_tag url_for(@post.video),
-                      controls: true,
-                      preload: "metadata",
-                      class: "video is-hidden",
-                      data: { video_preview_target: "player" } %>
-      </section>
-    <% else %>
-      <%= video_tag url_for(@post.video), controls: true, preload: "metadata", class: "video" %>
-    <% end %>
+          <%= video_tag url_for(@post.video),
+                        controls: true,
+                        preload: "metadata",
+                        class: "video is-hidden",
+                        data: { video_preview_target: "player" } %>
+        </section>
+      <% else %>
+        <%= video_tag url_for(@post.video), controls: true, preload: "metadata", class: "video" %>
+      <% end %>
+    </div>
   <% end %>
 
   <% if @media_info.present? %>
@@ -66,6 +68,10 @@
     <p><%= simple_format(@post.description) %></p>
   <% end %>
 
+  <div id="reactions">
+    <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
+  </div>
+
   <p class="post-meta">Опубликовано <%= l(@post.created_at, format: :long) %></p>
   <% if current_user == @post.user %>
     <div class="action-row">
@@ -93,7 +99,14 @@
     </section>
   <% end %>
 
-  <%= render "comments/form", post: @post, comment: @comment, submit_label: "Добавить комментарий" %>
+  <% if user_signed_in? %>
+    <%= render "comments/form", post: @post, comment: @comment, submit_label: "Добавить комментарий" %>
+  <% else %>
+    <p class="post-meta">
+      Чтобы оставить комментарий, <%= link_to "войдите", new_session_path %> или
+      <%= link_to "зарегистрируйтесь", new_registration_path %>.
+    </p>
+  <% end %>
 
   <hr>
 
@@ -102,17 +115,19 @@
       <article class="comment">
         <div class="comment-header">
           <p class="comment-meta">
-            <strong><%= comment.author_name %></strong> •
+            <strong><%= comment.user&.email || comment.author_name %></strong> •
             <%= l(comment.created_at, format: :short) %>
           </p>
-          <div class="action-row action-row--tight">
-            <%= link_to "Редактировать", edit_post_comment_path(@post, comment), class: "button button--secondary button--small" %>
-            <%= button_to "Удалить", post_comment_path(@post, comment),
-                          method: :delete,
-                          class: "button button--danger button--small",
-                          form: { class: "inline-form" },
-                          data: { turbo_confirm: "Удалить комментарий?" } %>
-          </div>
+          <% if current_user == comment.user %>
+            <div class="action-row action-row--tight">
+              <%= link_to "Редактировать", edit_post_comment_path(@post, comment), class: "button button--secondary button--small" %>
+              <%= button_to "Удалить", post_comment_path(@post, comment),
+                            method: :delete,
+                            class: "button button--danger button--small",
+                            form: { class: "inline-form" },
+                            data: { turbo_confirm: "Удалить комментарий?" } %>
+            </div>
+          <% end %>
         </div>
         <p><%= simple_format(comment.body) %></p>
       </article>

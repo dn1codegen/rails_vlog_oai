@@ -38,13 +38,15 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_difference("Comment.count", 1) do
       post post_comments_path(created_post), params: {
         comment: {
-          author_name: "Анна",
           body: "Очень понравилось видео!"
         }
       }
     end
 
     assert_redirected_to post_path(created_post, anchor: "comments")
+    comment = Comment.order(:id).last
+    assert_equal user, comment.user
+    assert_equal user.email, comment.author_name
   end
 
   test "uses filename as post title when title is blank" do
@@ -114,7 +116,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to posts_path
   end
 
-  test "guest cannot create posts but can add comments" do
+  test "guest cannot create posts or comments" do
     post_record = create_post_record
 
     get new_post_path
@@ -131,41 +133,53 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to new_session_path
 
-    assert_difference("Comment.count", 1) do
+    assert_no_difference("Comment.count") do
       post post_comments_path(post_record), params: {
         comment: {
-          author_name: "Гость",
           body: "Я могу только комментировать"
         }
       }
     end
-    assert_redirected_to post_path(post_record, anchor: "comments")
+    assert_redirected_to new_session_path
   end
 
-  test "user fetches description for selected video file" do
-    user = create_user(email: "metadata@example.com")
-    sign_in_as(user)
+  test "guest cannot set post reaction" do
+    post_record = create_post_record
 
-    result = VideoDescriptionFetcher::Result.new(
-      status: :ok,
-      description: "Автоматически найденное описание",
-      source: "Wikipedia",
-      query: "Sample",
-      source_order: [ "Wikipedia", "YouTube Data API", "TMDB" ]
-    )
-
-    with_forced_description_result(result) do
-      post fetch_description_posts_path,
-           params: { title: "", video: uploaded_video },
-           headers: { "ACCEPT" => "application/json" }
+    assert_no_difference("PostReaction.count") do
+      post post_reaction_path(post_record), params: { kind: "like" }
     end
 
+    assert_redirected_to new_session_path
+  end
+
+  test "user can like and dislike post with counters" do
+    user = create_user(email: "reactor@example.com")
+    post_record = create_post_record
+    sign_in_as(user)
+
+    assert_difference("PostReaction.count", 1) do
+      post post_reaction_path(post_record), params: { kind: "like" }
+    end
+    assert_redirected_to post_path(post_record, anchor: "reactions")
+    post_record.reload
+    assert_equal 1, post_record.likes_count
+    assert_equal 0, post_record.dislikes_count
+    assert_equal "like", PostReaction.find_by(post: post_record, user: user)&.kind
+
+    assert_no_difference("PostReaction.count") do
+      post post_reaction_path(post_record), params: { kind: "dislike" }
+    end
+    assert_redirected_to post_path(post_record, anchor: "reactions")
+    post_record.reload
+    assert_equal 0, post_record.likes_count
+    assert_equal 1, post_record.dislikes_count
+    assert_equal "dislike", PostReaction.find_by(post: post_record, user: user)&.kind
+
+    get post_path(post_record)
     assert_response :success
-    payload = JSON.parse(response.body)
-    assert_equal "ok", payload["status"]
-    assert_equal "Автоматически найденное описание", payload["description"]
-    assert_equal "Wikipedia", payload["source"]
-    assert_equal [ "Wikipedia", "YouTube Data API", "TMDB" ], payload["source_order"]
+    assert_match(/Лайки:\s*<strong>0<\/strong>/, response.body)
+    assert_match(/Дизлайки:\s*<strong>1<\/strong>/, response.body)
   end
 
   test "non-owner cannot edit or delete another user's post" do
@@ -192,25 +206,49 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "user edits and deletes comment" do
+    user = create_user(email: "comment-owner@example.com")
+    sign_in_as(user)
     post_record = create_post_record
-    comment = post_record.comments.create!(author_name: "Иван", body: "Первый комментарий")
+    comment = post_record.comments.create!(user:, body: "Первый комментарий")
 
     patch post_comment_path(post_record, comment), params: {
       comment: {
-        author_name: "Петр",
         body: "Обновленный комментарий"
       }
     }
 
     assert_redirected_to post_path(post_record, anchor: "comments")
     comment.reload
-    assert_equal "Петр", comment.author_name
+    assert_equal user.email, comment.author_name
     assert_equal "Обновленный комментарий", comment.body
 
     assert_difference("Comment.count", -1) do
       delete post_comment_path(post_record, comment)
     end
 
+    assert_redirected_to post_path(post_record, anchor: "comments")
+  end
+
+  test "non-owner cannot edit or delete another user's comment" do
+    owner = create_user(email: "comment-real-owner@example.com")
+    intruder = create_user(email: "comment-intruder@example.com")
+    post_record = create_post_record(user: owner)
+    comment = post_record.comments.create!(user: owner, body: "Чужой комментарий")
+    sign_in_as(intruder)
+
+    patch post_comment_path(post_record, comment), params: {
+      comment: {
+        body: "Попытка изменить"
+      }
+    }
+    assert_redirected_to post_path(post_record, anchor: "comments")
+    follow_redirect!
+    assert_match "только свои комментарии", response.body
+    assert_equal "Чужой комментарий", comment.reload.body
+
+    assert_no_difference("Comment.count") do
+      delete post_comment_path(post_record, comment)
+    end
     assert_redirected_to post_path(post_record, anchor: "comments")
   end
 
@@ -281,14 +319,6 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     yield
   ensure
     MediaStreamInspector.forced_result = previous
-  end
-
-  def with_forced_description_result(result)
-    previous = VideoDescriptionFetcher.forced_result
-    VideoDescriptionFetcher.forced_result = result
-    yield
-  ensure
-    VideoDescriptionFetcher.forced_result = previous
   end
 
   def create_post_record(title: "Тестовый пост", user: nil)

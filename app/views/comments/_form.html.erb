@@ -1,8 +1,7 @@
 <%= form_with model: [post, comment] do |form| %>
-  <div class="field">
-    <%= form.label :author_name, "Имя" %>
-    <%= form.text_field :author_name, required: true, maxlength: 80 %>
-  </div>
+  <% if user_signed_in? %>
+    <p class="post-meta">Комментарий будет опубликован от: <strong><%= current_user.email %></strong></p>
+  <% end %>
 
   <div class="field">
     <%= form.label :body, "Комментарий" %>

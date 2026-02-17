@@ -7,6 +7,8 @@ class User < ApplicationRecord
   PASSWORD_DIGEST_BYTES = 32
 
   has_many :posts, dependent: :nullify
+  has_many :comments, dependent: :destroy
+  has_many :post_reactions, dependent: :destroy
 
   attr_accessor :password, :password_confirmation
 

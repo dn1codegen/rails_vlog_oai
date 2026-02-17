@@ -2,10 +2,12 @@
 
 one:
   post: one
+  user: one
   author_name: MyString
   body: MyText
 
 two:
   post: two
+  user: two
   author_name: MyString
   body: MyText

@@ -14,6 +14,7 @@ class Post < ApplicationRecord
   has_many_attached :preview_frames
   belongs_to :user
   has_many :comments, dependent: :destroy
+  has_many :post_reactions, dependent: :destroy
 
   validates :user, presence: true
   validates :title, presence: true, length: { maximum: 120 }
@@ -33,6 +34,13 @@ class Post < ApplicationRecord
     else
       GeneratePostThumbnailJob.perform_later(self)
     end
+  end
+
+  def refresh_reaction_counters!
+    likes = post_reactions.where(kind: PostReaction.kinds.fetch("like")).count
+    dislikes = post_reactions.where(kind: PostReaction.kinds.fetch("dislike")).count
+
+    update_columns(likes_count: likes, dislikes_count: dislikes)
   end
 
   private

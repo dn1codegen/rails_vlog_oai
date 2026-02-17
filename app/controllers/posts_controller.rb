@@ -1,10 +1,11 @@
 class PostsController < ApplicationController
   before_action :set_post, only: %i[show edit update destroy]
-  before_action :require_authentication, only: %i[new create edit update destroy fetch_description]
+  before_action :require_authentication, only: %i[new create edit update destroy]
   before_action :authorize_post_owner!, only: %i[edit update destroy]
 
   def index
     @posts = Post.includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob).order(created_at: :desc)
+    @user_reactions_by_post_id = load_user_reactions(@posts)
   end
 
   def show
@@ -19,6 +20,7 @@ class PostsController < ApplicationController
     @comments = @post.comments.order(created_at: :desc)
     @comment = @post.comments.build
     @media_info = MediaStreamInspector.inspect(@post.video.blob) if @post.video.attached?
+    @current_user_reaction = current_user.post_reactions.find_by(post: @post) if user_signed_in?
   end
 
   def new
@@ -52,30 +54,6 @@ class PostsController < ApplicationController
     redirect_to posts_path, notice: "Пост удален"
   end
 
-  def fetch_description
-    result = VideoDescriptionFetcher.fetch(
-      uploaded_file: params[:video],
-      title_hint: params[:title]
-    )
-
-    if result.status == :ok
-      render json: {
-        status: "ok",
-        description: result.description,
-        source: result.source,
-        query: result.query,
-        source_order: result.source_order
-      }
-    else
-      render json: {
-        status: "error",
-        message: result.message,
-        query: result.query,
-        source_order: result.source_order
-      }, status: :unprocessable_entity
-    end
-  end
-
   private
 
   def set_post
@@ -90,5 +68,14 @@ class PostsController < ApplicationController
     return if @post.user == current_user
 
     redirect_to post_path(@post), alert: "Редактировать и удалять можно только свои посты."
+  end
+
+  def load_user_reactions(posts)
+    return {} unless user_signed_in?
+
+    post_ids = posts.map(&:id)
+    return {} if post_ids.empty?
+
+    current_user.post_reactions.where(post_id: post_ids).index_by(&:post_id)
   end
 end

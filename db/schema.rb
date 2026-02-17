@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_16_135312) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_150000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -45,13 +45,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_135312) do
     t.datetime "created_at", null: false
     t.integer "post_id", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
     t.index ["created_at"], name: "index_comments_on_created_at"
     t.index ["post_id"], name: "index_comments_on_post_id"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "post_reactions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "kind", null: false
+    t.integer "post_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["post_id", "kind"], name: "index_post_reactions_on_post_id_and_kind"
+    t.index ["post_id", "user_id"], name: "index_post_reactions_on_post_id_and_user_id", unique: true
+    t.index ["post_id"], name: "index_post_reactions_on_post_id"
+    t.index ["user_id"], name: "index_post_reactions_on_user_id"
   end
 
   create_table "posts", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "dislikes_count", default: 0, null: false
+    t.integer "likes_count", default: 0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
@@ -70,5 +86,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_16_135312) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "comments", "posts"
+  add_foreign_key "comments", "users"
+  add_foreign_key "post_reactions", "posts"
+  add_foreign_key "post_reactions", "users"
   add_foreign_key "posts", "users"
 end

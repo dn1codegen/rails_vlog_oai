@@ -22,8 +22,7 @@
     <%= form.label :description, "Описание" %>
     <%= form.text_area :description,
                        rows: 5,
-                       maxlength: 5000,
-                       data: { post_form_target: "description" } %>
+                       maxlength: 5000 %>
   </div>
 
   <div class="field">
@@ -39,16 +38,6 @@
     <% if post.video.attached? %>
       <small>Текущее видео сохранено. Выберите файл только если хотите заменить его.</small>
     <% end %>
-
-    <div class="field-tools">
-      <button type="button"
-              class="button button--secondary button--small"
-              data-post-form-target="fetchButton"
-              data-action="post-form#fetchDescription">
-        Запросить описание
-      </button>
-      <p class="field-status" data-post-form-target="status" aria-live="polite"></p>
-    </div>
   </div>
 
   <%= form.submit(post.new_record? ? "Опубликовать" : "Сохранить изменения", class: "button") %>
