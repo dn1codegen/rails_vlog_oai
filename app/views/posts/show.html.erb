@@ -40,20 +40,17 @@
     <div class="media-tags" aria-label="Информация о видео">
       <% if @media_info.status == :ok %>
         <span class="media-tag">
-          <strong>Видео кодек:</strong>
+          <strong>Видео:</strong>
           <%= @media_info.video_codec.presence || "не определен" %>
           •
-          <strong>Разрешение:</strong>
           <%= @media_info.video_resolution.presence || "не определено" %>
           •
-          <strong>Видео битрейт:</strong>
           <%= format_bitrate(@media_info.video_bitrate) %>
         </span>
         <span class="media-tag">
-          <strong>Аудио кодек:</strong>
+          <strong>Аудио:</strong>
           <%= @media_info.audio_codec.presence || "аудио дорожка отсутствует" %>
           •
-          <strong>Аудио битрейт:</strong>
           <%= @media_info.audio_codec.present? ? format_bitrate(@media_info.audio_bitrate) : "аудио дорожка отсутствует" %>
         </span>
       <% else %>
