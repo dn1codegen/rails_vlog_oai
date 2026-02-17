@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   resource :session, only: %i[new create destroy]
 
   resources :posts, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+    collection do
+      post :fetch_description
+    end
+
     resources :comments, only: [ :create, :edit, :update, :destroy ]
   end
 end

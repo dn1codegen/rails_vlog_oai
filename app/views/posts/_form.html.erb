@@ -1,4 +1,4 @@
-<%= form_with model: post do |form| %>
+<%= form_with model: post, data: { controller: "post-form" } do |form| %>
   <% if post.errors.any? %>
     <section class="error-box">
       <h3>Не удалось сохранить пост</h3>
@@ -12,17 +12,26 @@
 
   <div class="field">
     <%= form.label :title, "Название" %>
-    <%= form.text_field :title, maxlength: 120, placeholder: "Можно оставить пустым — возьмем из видео" %>
+    <%= form.text_field :title,
+                        maxlength: 120,
+                        placeholder: "Можно оставить пустым — возьмем из видео",
+                        data: { post_form_target: "title" } %>
   </div>
 
   <div class="field">
     <%= form.label :description, "Описание" %>
-    <%= form.text_area :description, rows: 5, maxlength: 5000 %>
+    <%= form.text_area :description,
+                       rows: 5,
+                       maxlength: 5000,
+                       data: { post_form_target: "description" } %>
   </div>
 
   <div class="field">
     <%= form.label :video, "Видео" %>
-    <%= form.file_field :video, required: post.new_record?, accept: ".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska" %>
+    <%= form.file_field :video,
+                        required: post.new_record?,
+                        accept: ".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska",
+                        data: { post_form_target: "video", action: "change->post-form#onVideoSelected" } %>
     <small>
       Поддерживаются современные кодеки: AV1, H.265/HEVC, VP9 и H.264.
       Сервер проверяет кодек через ffprobe.
@@ -30,6 +39,16 @@
     <% if post.video.attached? %>
       <small>Текущее видео сохранено. Выберите файл только если хотите заменить его.</small>
     <% end %>
+
+    <div class="field-tools">
+      <button type="button"
+              class="button button--secondary button--small"
+              data-post-form-target="fetchButton"
+              data-action="post-form#fetchDescription">
+        Запросить описание
+      </button>
+      <p class="field-status" data-post-form-target="status" aria-live="polite"></p>
+    </div>
   </div>
 
   <%= form.submit(post.new_record? ? "Опубликовать" : "Сохранить изменения", class: "button") %>

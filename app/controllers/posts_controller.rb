@@ -1,6 +1,6 @@
 class PostsController < ApplicationController
   before_action :set_post, only: %i[show edit update destroy]
-  before_action :require_authentication, only: %i[new create edit update destroy]
+  before_action :require_authentication, only: %i[new create edit update destroy fetch_description]
   before_action :authorize_post_owner!, only: %i[edit update destroy]
 
   def index
@@ -50,6 +50,30 @@ class PostsController < ApplicationController
   def destroy
     @post.destroy
     redirect_to posts_path, notice: "Пост удален"
+  end
+
+  def fetch_description
+    result = VideoDescriptionFetcher.fetch(
+      uploaded_file: params[:video],
+      title_hint: params[:title]
+    )
+
+    if result.status == :ok
+      render json: {
+        status: "ok",
+        description: result.description,
+        source: result.source,
+        query: result.query,
+        source_order: result.source_order
+      }
+    else
+      render json: {
+        status: "error",
+        message: result.message,
+        query: result.query,
+        source_order: result.source_order
+      }, status: :unprocessable_entity
+    end
   end
 
   private

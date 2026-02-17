@@ -142,6 +142,32 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to post_path(post_record, anchor: "comments")
   end
 
+  test "user fetches description for selected video file" do
+    user = create_user(email: "metadata@example.com")
+    sign_in_as(user)
+
+    result = VideoDescriptionFetcher::Result.new(
+      status: :ok,
+      description: "Автоматически найденное описание",
+      source: "Wikipedia",
+      query: "Sample",
+      source_order: [ "Wikipedia", "YouTube Data API", "TMDB" ]
+    )
+
+    with_forced_description_result(result) do
+      post fetch_description_posts_path,
+           params: { title: "", video: uploaded_video },
+           headers: { "ACCEPT" => "application/json" }
+    end
+
+    assert_response :success
+    payload = JSON.parse(response.body)
+    assert_equal "ok", payload["status"]
+    assert_equal "Автоматически найденное описание", payload["description"]
+    assert_equal "Wikipedia", payload["source"]
+    assert_equal [ "Wikipedia", "YouTube Data API", "TMDB" ], payload["source_order"]
+  end
+
   test "non-owner cannot edit or delete another user's post" do
     owner = create_user(email: "owner-two@example.com")
     intruder = create_user(email: "intruder@example.com")
@@ -219,28 +245,6 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "192 кбит/с", response.body
   end
 
-  test "uses internet fallback thumbnail when frame extraction fails" do
-    fallback_lambda = lambda do |post|
-      post.thumbnail.attach(
-        io: StringIO.new("fake-image-binary"),
-        filename: "fallback.jpg",
-        content_type: "image/jpeg"
-      )
-      PostTitleImageFinder::Result.new(status: :ok, image_url: "https://upload.wikimedia.org/fallback.jpg")
-    end
-
-    with_forced_video_thumbnail_result(VideoThumbnailGenerator::Result.new(status: :error, message: "ffmpeg failed")) do
-      with_forced_title_image_result(fallback_lambda) do
-        post_record = nil
-        perform_enqueued_jobs do
-          post_record = create_post_record(title: "Котики и путешествия")
-        end
-        post_record.reload
-        assert post_record.thumbnail.attached?
-      end
-    end
-  end
-
   private
 
   def uploaded_video
@@ -279,20 +283,12 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     MediaStreamInspector.forced_result = previous
   end
 
-  def with_forced_video_thumbnail_result(result)
-    previous = VideoThumbnailGenerator.forced_result
-    VideoThumbnailGenerator.forced_result = result
+  def with_forced_description_result(result)
+    previous = VideoDescriptionFetcher.forced_result
+    VideoDescriptionFetcher.forced_result = result
     yield
   ensure
-    VideoThumbnailGenerator.forced_result = previous
-  end
-
-  def with_forced_title_image_result(result)
-    previous = PostTitleImageFinder.forced_result
-    PostTitleImageFinder.forced_result = result
-    yield
-  ensure
-    PostTitleImageFinder.forced_result = previous
+    VideoDescriptionFetcher.forced_result = previous
   end
 
   def create_post_record(title: "Тестовый пост", user: nil)

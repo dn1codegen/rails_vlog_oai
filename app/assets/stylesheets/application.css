@@ -301,7 +301,31 @@ h3 {
 }
 
 .field small {
+  display: block;
+  margin-top: 4px;
   color: var(--muted);
+}
+
+.field-tools {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.field-status--ok {
+  color: var(--success-text);
+}
+
+.field-status--error {
+  color: var(--danger-text);
 }
 
 .error-box {
