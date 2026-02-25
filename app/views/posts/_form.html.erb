@@ -1,4 +1,8 @@
-<%= form_with model: post, data: { controller: "post-form" } do |form| %>
+<%= form_with model: post, data: {
+  controller: "post-form youtube-import",
+  youtube_import_metadata_url_value: youtube_options_posts_path,
+  action: "turbo:submit-start->youtube-import#onSubmitStart turbo:submit-end->youtube-import#onSubmitEnd"
+} do |form| %>
   <% if post.errors.any? %>
     <section class="error-box">
       <h3>Не удалось сохранить пост</h3>
@@ -15,14 +19,15 @@
     <%= form.text_field :title,
                         maxlength: 120,
                         placeholder: "Можно оставить пустым — возьмем из видео",
-                        data: { post_form_target: "title" } %>
+                        data: { post_form_target: "title", youtube_import_target: "title" } %>
   </div>
 
   <div class="field">
     <%= form.label :description, "Описание" %>
     <%= form.text_area :description,
                        rows: 5,
-                       maxlength: 5000 %>
+                       maxlength: 5000,
+                       data: { youtube_import_target: "description" } %>
   </div>
 
   <div class="field">
@@ -33,10 +38,57 @@
     <small>Разделяйте теги запятыми. До 10 тегов, каждый до 30 символов.</small>
   </div>
 
+  <% if post.new_record? %>
+    <div class="field">
+      <%= form.label :youtube_url, "Ссылка на YouTube" %>
+      <div class="youtube-import-row">
+        <%= form.url_field :youtube_url,
+                           placeholder: "https://www.youtube.com/watch?v=...",
+                           autocomplete: "off",
+                           data: { youtube_import_target: "url" } %>
+      </div>
+      <div class="youtube-import-actions">
+        <button type="button"
+                class="button button--secondary youtube-import-button"
+                data-youtube-import-target="metadataButton"
+                data-action="youtube-import#loadOptions">
+          Подтянуть данные
+        </button>
+        <button type="submit"
+                class="button youtube-download-button"
+                data-youtube-import-target="downloadButton"
+                data-action="youtube-import#markDownloadRequested">
+          Скачать и опубликовать
+        </button>
+      </div>
+
+      <%= form.label :youtube_quality, "Качество видео (yt-dlp)" %>
+      <%= form.select :youtube_quality,
+                      [ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
+                      { selected: post.youtube_quality.presence || "medium" } %>
+      <p class="youtube-import-status" data-youtube-import-target="status"></p>
+      <div class="youtube-import-progress" data-youtube-import-target="progress" hidden>
+        <div class="youtube-import-progress-track"
+             role="progressbar"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             aria-valuenow="0"
+             data-youtube-import-target="progressTrack">
+          <span class="youtube-import-progress-fill" data-youtube-import-target="progressFill"></span>
+        </div>
+        <p class="youtube-import-progress-text" data-youtube-import-target="progressText">Ожидание старта...</p>
+      </div>
+
+      <small>
+        Вставьте ссылку и выберите пресет качества. yt-dlp сам подберет подходящий формат.
+        Если описание пустое, подставим текст из YouTube.
+      </small>
+    </div>
+  <% end %>
+
   <div class="field">
     <%= form.label :video, "Видео" %>
     <%= form.file_field :video,
-                        required: post.new_record?,
                         accept: ".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska",
                         data: { post_form_target: "video", action: "change->post-form#onVideoSelected" } %>
     <small>

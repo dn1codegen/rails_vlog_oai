@@ -71,6 +71,77 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_equal "sample", created_post.title
   end
 
+  test "user creates post from youtube link and selected quality" do
+    user = create_user(email: "youtube-author@example.com")
+    sign_in_as(user)
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
+      with_forced_youtube_download_result(lambda do |post:, url:, quality:|
+        assert_match "youtube.com", url
+        assert_equal "medium", quality
+
+        payload = File.binread(Rails.root.join("test/fixtures/files/sample.mp4"))
+        post.video.attach(io: StringIO.new(payload), filename: "from-youtube.mp4", content_type: "video/mp4")
+
+        YoutubeVideoImporter::DownloadResult.new(
+          status: :ok,
+          title: "Видео из YouTube",
+          description: "Описание, подтянутое из YouTube"
+        )
+      end) do
+        assert_difference("Post.count", 1) do
+          post posts_path, params: {
+            post: {
+              title: "",
+              description: "",
+              tags: "rails, youtube",
+              youtube_url: "https://www.youtube.com/watch?v=abc123",
+              youtube_quality: "medium"
+            }
+          }
+        end
+      end
+    end
+
+    created_post = Post.order(:id).last
+    assert_redirected_to post_path(created_post)
+    assert_equal "Видео из YouTube", created_post.title
+    assert_equal "Описание, подтянутое из YouTube", created_post.description
+    assert created_post.video.attached?
+  end
+
+  test "returns youtube metadata for signed in user" do
+    user = create_user(email: "youtube-options@example.com")
+    sign_in_as(user)
+
+    metadata_result = YoutubeVideoImporter::MetadataResult.new(
+      status: :ok,
+      title: "Sample video",
+      description: "Sample description"
+    )
+
+    with_forced_youtube_metadata_result(metadata_result) do
+      get youtube_options_posts_path, params: { url: "https://www.youtube.com/watch?v=abc123" }
+    end
+
+    assert_response :success
+    payload = JSON.parse(response.body)
+    assert_equal "Sample video", payload.fetch("title")
+    assert_equal "Sample description", payload.fetch("description")
+    assert_not payload.key?("formats")
+  end
+
+  test "new post form shows youtube download button and progress bar" do
+    user = create_user(email: "youtube-form@example.com")
+    sign_in_as(user)
+
+    get new_post_path
+
+    assert_response :success
+    assert_match "Скачать и опубликовать", response.body
+    assert_match(/data-youtube-import-target=\"progress\"/, response.body)
+  end
+
   test "rejects unsupported video codec on create" do
     user = create_user(email: "codec-check@example.com")
     sign_in_as(user)
@@ -140,6 +211,9 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
         }
       }
     end
+    assert_redirected_to new_session_path
+
+    get youtube_options_posts_path, params: { url: "https://www.youtube.com/watch?v=abc123" }
     assert_redirected_to new_session_path
   end
 
@@ -375,6 +449,22 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     yield
   ensure
     MediaStreamInspector.forced_result = previous
+  end
+
+  def with_forced_youtube_metadata_result(result)
+    previous = YoutubeVideoImporter.forced_metadata_result
+    YoutubeVideoImporter.forced_metadata_result = result
+    yield
+  ensure
+    YoutubeVideoImporter.forced_metadata_result = previous
+  end
+
+  def with_forced_youtube_download_result(result)
+    previous = YoutubeVideoImporter.forced_download_result
+    YoutubeVideoImporter.forced_download_result = result
+    yield
+  ensure
+    YoutubeVideoImporter.forced_download_result = previous
   end
 
   def create_post_record(title: "Тестовый пост", user: nil, tags: "")

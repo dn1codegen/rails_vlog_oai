@@ -1,6 +1,6 @@
 class PostsController < ApplicationController
   before_action :set_post, only: %i[show edit update destroy]
-  before_action :require_authentication, only: %i[new create edit update destroy]
+  before_action :require_authentication, only: %i[new create edit update destroy youtube_options]
   before_action :authorize_post_owner!, only: %i[edit update destroy]
 
   def index
@@ -39,7 +39,15 @@ class PostsController < ApplicationController
   end
 
   def create
-    @post = current_user.posts.build(post_params)
+    attributes = post_params
+    @post = current_user.posts.build(attributes.except(:youtube_url, :youtube_quality))
+    @post.youtube_url = attributes[:youtube_url].to_s.strip
+    @post.youtube_quality = attributes[:youtube_quality].to_s.strip
+
+    unless attach_video_from_youtube_if_needed(@post)
+      render :new, status: :unprocessable_entity
+      return
+    end
 
     if @post.save
       redirect_to @post, notice: "Видео опубликовано"
@@ -62,6 +70,22 @@ class PostsController < ApplicationController
     redirect_to posts_path, notice: "Пост удален"
   end
 
+  def youtube_options
+    result = YoutubeVideoImporter.metadata(params[:url].to_s)
+    if result.status == :ok
+      render json: {
+        title: result.title,
+        description: result.description
+      }
+    else
+      render json: {
+        error: result.message.presence || "Не удалось получить метаданные YouTube",
+        title: result.title,
+        description: result.description
+      }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_post
@@ -69,7 +93,26 @@ class PostsController < ApplicationController
   end
 
   def post_params
-    params.require(:post).permit(:title, :description, :tags, :video)
+    params.require(:post).permit(:title, :description, :tags, :video, :youtube_url, :youtube_quality)
+  end
+
+  def attach_video_from_youtube_if_needed(post)
+    return true if post.video.attached?
+    return true if post.youtube_url.blank?
+
+    result = YoutubeVideoImporter.download_and_attach(
+      post:,
+      url: post.youtube_url,
+      quality: post.youtube_quality.presence
+    )
+    if result.status != :ok
+      post.errors.add(:video, result.message.presence || "Не удалось скачать видео по ссылке YouTube")
+      return false
+    end
+
+    post.title = result.title.to_s.strip[0, 120] if post.title.blank? && result.title.present?
+    post.description = result.description.to_s.strip[0, 5000] if post.description.blank? && result.description.present?
+    true
   end
 
   def authorize_post_owner!

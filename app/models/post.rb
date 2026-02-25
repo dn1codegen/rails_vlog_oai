@@ -19,6 +19,8 @@ class Post < ApplicationRecord
   has_many :comments, dependent: :destroy
   has_many :post_reactions, dependent: :destroy
 
+  attr_accessor :youtube_url, :youtube_quality
+
   validates :user, presence: true
   validates :title, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 5000 }

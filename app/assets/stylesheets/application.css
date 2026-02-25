@@ -588,8 +588,10 @@ main.container {
 }
 
 .field input[type="text"],
+.field input[type="url"],
 .field input[type="email"],
 .field input[type="password"],
+.field select,
 .field textarea,
 .field input[type="file"] {
   width: 100%;
@@ -601,8 +603,10 @@ main.container {
 }
 
 .field input[type="text"],
+.field input[type="url"],
 .field input[type="email"],
 .field input[type="password"],
+.field select,
 .field input[type="file"] {
   min-height: 42px;
 }
@@ -613,6 +617,7 @@ main.container {
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   outline: none;
   border-color: var(--link);
@@ -624,6 +629,76 @@ main.container {
   margin-top: 5px;
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.youtube-import-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.youtube-import-row input[type="url"] {
+  flex: 1;
+}
+
+.youtube-import-button {
+  min-width: 170px;
+  white-space: nowrap;
+}
+
+.youtube-import-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.youtube-download-button {
+  min-width: 220px;
+  white-space: nowrap;
+}
+
+.youtube-import-status {
+  min-height: 20px;
+  margin-top: 6px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.youtube-import-status--error {
+  color: var(--danger-text);
+}
+
+.youtube-import-status--ok {
+  color: var(--success-text);
+}
+
+.youtube-import-progress {
+  margin-top: 8px;
+}
+
+.youtube-import-progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e6e6e6;
+  overflow: hidden;
+}
+
+.youtube-import-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff0033, #ff5e4d);
+  transition: width 0.25s ease;
+}
+
+.youtube-import-progress-text {
+  margin-top: 5px;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .error-box {
@@ -733,6 +808,26 @@ main.container {
   .post-card,
   .panel {
     padding: 14px;
+  }
+
+  .youtube-import-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .youtube-import-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .youtube-import-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .youtube-download-button {
+    min-width: 0;
+    width: 100%;
   }
 
   .post-card-media {
