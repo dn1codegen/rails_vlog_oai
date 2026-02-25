@@ -1,6 +1,8 @@
 <section class="page-head">
   <h1>Лента видео</h1>
-
+  <% if @query.present? %>
+    <p class="search-summary">Результаты поиска: <strong><%= @query %></strong></p>
+  <% end %>
 </section>
 
 <% if @posts.any? %>
@@ -41,6 +43,10 @@
   </section>
 <% else %>
   <section class="panel">
-    <p class="empty">Пока нет постов. Создайте первый видео-пост.</p>
+    <% if @query.present? %>
+      <p class="empty">По запросу ничего не найдено.</p>
+    <% else %>
+      <p class="empty">Пока нет постов. Создайте первый видео-пост.</p>
+    <% end %>
   </section>
 <% end %>

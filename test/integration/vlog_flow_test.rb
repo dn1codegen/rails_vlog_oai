@@ -153,6 +153,18 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  test "filters posts by query on index" do
+    create_post_record(title: "Ruby on Rails обзор")
+    create_post_record(title: "Go microservices")
+
+    get root_path, params: { q: "rails" }
+
+    assert_response :success
+    assert_match "Ruby on Rails обзор", response.body
+    assert_no_match "Go microservices", response.body
+    assert_match "Результаты поиска", response.body
+  end
+
   test "user can like and dislike post with counters" do
     user = create_user(email: "reactor@example.com")
     post_record = create_post_record

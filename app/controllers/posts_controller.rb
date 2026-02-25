@@ -4,7 +4,15 @@ class PostsController < ApplicationController
   before_action :authorize_post_owner!, only: %i[edit update destroy]
 
   def index
+    @query = params[:q].to_s.strip
     @posts = Post.includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob).order(created_at: :desc)
+    if @query.present?
+      normalized_query = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
+      @posts = @posts.where(
+        "LOWER(posts.title) LIKE :query OR LOWER(COALESCE(posts.description, '')) LIKE :query",
+        query: normalized_query
+      )
+    end
     @user_reactions_by_post_id = load_user_reactions(@posts)
   end
 
