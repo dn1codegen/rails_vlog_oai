@@ -9,7 +9,7 @@ class PostsController < ApplicationController
     if @query.present?
       normalized_query = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
       @posts = @posts.where(
-        "LOWER(posts.title) LIKE :query OR LOWER(COALESCE(posts.description, '')) LIKE :query",
+        "LOWER(posts.title) LIKE :query OR LOWER(COALESCE(posts.description, '')) LIKE :query OR LOWER(COALESCE(posts.tags, '')) LIKE :query",
         query: normalized_query
       )
     end
@@ -70,7 +70,7 @@ class PostsController < ApplicationController
   end
 
   def post_params
-    params.require(:post).permit(:title, :description, :video)
+    params.require(:post).permit(:title, :description, :tags, :video)
   end
 
   def authorize_post_owner!
@@ -97,7 +97,7 @@ class PostsController < ApplicationController
 
     if keywords.any?
       query_chunks = keywords.map.with_index do |_word, index|
-        "LOWER(posts.title) LIKE :q#{index} OR LOWER(COALESCE(posts.description, '')) LIKE :q#{index}"
+        "LOWER(posts.title) LIKE :q#{index} OR LOWER(COALESCE(posts.description, '')) LIKE :q#{index} OR LOWER(COALESCE(posts.tags, '')) LIKE :q#{index}"
       end
       query_binds = keywords.each_with_index.to_h do |keyword, index|
         [ :"q#{index}", "%#{ActiveRecord::Base.sanitize_sql_like(keyword)}%" ]
@@ -126,7 +126,7 @@ class PostsController < ApplicationController
       пост видео vlog video
     ]
 
-    [ post.title, post.description ].join(" ")
+    [ post.title, post.description, post.tags ].join(" ")
                                     .downcase
                                     .scan(/[\p{L}\p{N}]+/)
                                     .uniq

@@ -8,6 +8,9 @@ class Post < ApplicationRecord
     video/x-matroska
   ].freeze
   MODERN_VIDEO_CODECS = %w[av1 hevc h264 vp9].freeze
+  TAG_SPLIT_REGEX = /[,\n]/
+  MAX_TAG_COUNT = 10
+  MAX_TAG_LENGTH = 30
 
   has_one_attached :video
   has_one_attached :thumbnail
@@ -19,12 +22,19 @@ class Post < ApplicationRecord
   validates :user, presence: true
   validates :title, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 5000 }
+  validates :tags, length: { maximum: 500 }
+  validate :tags_are_valid
 
   before_validation :assign_title_from_video, on: :create
+  before_validation :normalize_tags
   validate :video_presence
   validate :video_content_type_supported
   validate :video_codec_supported
   after_commit :request_thumbnail_generation, on: :create
+
+  def tag_list
+    tags.to_s.split(",").map(&:strip).reject(&:blank?)
+  end
 
   def request_thumbnail_generation
     return unless video.attached?
@@ -44,6 +54,39 @@ class Post < ApplicationRecord
   end
 
   private
+
+  def normalize_tags
+    normalized_tags = tags.to_s
+                          .split(TAG_SPLIT_REGEX)
+                          .map { |tag| normalize_tag(tag) }
+                          .reject(&:blank?)
+                          .uniq
+
+    self.tags = normalized_tags.join(", ")
+  end
+
+  def normalize_tag(tag)
+    tag.to_s
+       .strip
+       .delete_prefix("#")
+       .downcase
+       .gsub(/\s+/, "-")
+       .gsub(/[^\p{L}\p{N}_-]/, "")
+       .gsub(/-+/, "-")
+       .gsub(/\A-|-+\z/, "")
+  end
+
+  def tags_are_valid
+    current_tags = tag_list
+    if current_tags.size > MAX_TAG_COUNT
+      errors.add(:tags, "можно указать не более #{MAX_TAG_COUNT} тегов")
+    end
+
+    too_long_tag = current_tags.find { |tag| tag.length > MAX_TAG_LENGTH }
+    return unless too_long_tag
+
+    errors.add(:tags, "тег ##{too_long_tag} длиннее #{MAX_TAG_LENGTH} символов")
+  end
 
   def assign_title_from_video
     return if title.present?

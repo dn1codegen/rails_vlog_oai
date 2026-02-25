@@ -32,6 +32,14 @@
           <p><%= truncate(post.description, length: 220) %></p>
         <% end %>
 
+        <% if post.tag_list.any? %>
+          <div class="post-tags" aria-label="Теги поста">
+            <% post.tag_list.each do |tag| %>
+              <%= link_to "##{tag}", root_path(q: tag), class: "post-tag" %>
+            <% end %>
+          </div>
+        <% end %>
+
         <p class="post-meta">
           Опубликовано <%= l(post.created_at, format: :short) %> •
           Комментариев: <%= post.comments.size %>

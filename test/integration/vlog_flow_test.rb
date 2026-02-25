@@ -154,7 +154,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "filters posts by query on index" do
-    create_post_record(title: "Ruby on Rails обзор")
+    create_post_record(title: "Ruby on Rails обзор", tags: "rails, backend")
     create_post_record(title: "Go microservices")
 
     get root_path, params: { q: "rails" }
@@ -163,6 +163,38 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "Ruby on Rails обзор", response.body
     assert_no_match "Go microservices", response.body
     assert_match "Результаты поиска", response.body
+  end
+
+  test "user can add tags to post" do
+    user = create_user(email: "tagger@example.com")
+    sign_in_as(user)
+
+    inspection = VideoCodecInspector::Result.new(status: :ok, codec: "av1")
+
+    with_forced_result(inspection) do
+      assert_difference("Post.count", 1) do
+        post posts_path, params: {
+          post: {
+            title: "Видео с тегами",
+            description: "Проверка тегов",
+            tags: "#Rails, API Design, rails",
+            video: uploaded_video
+          }
+        }
+      end
+    end
+
+    created_post = Post.order(:id).last
+    assert_equal "rails, api-design", created_post.tags
+
+    get post_path(created_post)
+    assert_response :success
+    assert_match "#rails", response.body
+    assert_match "#api-design", response.body
+
+    get root_path, params: { q: "api-design" }
+    assert_response :success
+    assert_match "Видео с тегами", response.body
   end
 
   test "user can like and dislike post with counters" do
@@ -345,8 +377,13 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     MediaStreamInspector.forced_result = previous
   end
 
-  def create_post_record(title: "Тестовый пост", user: nil)
-    post_record = Post.new(user: user || create_user(email: "post-owner-#{SecureRandom.hex(4)}@example.com"), title:, description: "Описание")
+  def create_post_record(title: "Тестовый пост", user: nil, tags: "")
+    post_record = Post.new(
+      user: user || create_user(email: "post-owner-#{SecureRandom.hex(4)}@example.com"),
+      title:,
+      description: "Описание",
+      tags:
+    )
     with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
       File.open(Rails.root.join("test/fixtures/files/sample.mp4")) do |file|
         post_record.video.attach(io: file, filename: "sample.mp4", content_type: "video/mp4")

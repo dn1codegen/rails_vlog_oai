@@ -903,3 +903,41 @@ main.container {
     padding-right: 14px;
   }
 }
+
+.post-tags {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.post-tags--compact {
+  margin-top: 0;
+  margin-bottom: 4px;
+  gap: 4px;
+}
+
+.post-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #d9d9d9;
+  background: #f1f1f1;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.post-tag:hover {
+  background: #e7e7e7;
+  color: #111827;
+}
+
+.post-tag--compact {
+  min-height: 22px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+}

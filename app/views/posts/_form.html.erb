@@ -26,6 +26,14 @@
   </div>
 
   <div class="field">
+    <%= form.label :tags, "Теги" %>
+    <%= form.text_field :tags,
+                        placeholder: "например: rails, backend, tutorial",
+                        maxlength: 500 %>
+    <small>Разделяйте теги запятыми. До 10 тегов, каждый до 30 символов.</small>
+  </div>
+
+  <div class="field">
     <%= form.label :video, "Видео" %>
     <%= form.file_field :video,
                         required: post.new_record?,

@@ -71,6 +71,14 @@
         <p><%= simple_format(@post.description) %></p>
       <% end %>
 
+      <% if @post.tag_list.any? %>
+        <div class="post-tags" aria-label="Теги поста">
+          <% @post.tag_list.each do |tag| %>
+            <%= link_to "##{tag}", root_path(q: tag), class: "post-tag" %>
+          <% end %>
+        </div>
+      <% end %>
+
       <div id="reactions">
         <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
       </div>
@@ -160,6 +168,13 @@
               <% end %>
               <div class="related-card__body">
                 <h3 class="related-card__title"><%= link_to related_post.title, post_path(related_post) %></h3>
+                <% if related_post.tag_list.any? %>
+                  <div class="post-tags post-tags--compact" aria-label="Теги похожего поста">
+                    <% related_post.tag_list.first(3).each do |tag| %>
+                      <%= link_to "##{tag}", root_path(q: tag), class: "post-tag post-tag--compact" %>
+                    <% end %>
+                  </div>
+                <% end %>
                 <p class="related-card__meta">
                   <%= l(related_post.created_at, format: :short) %> • Комментариев: <%= related_post.comments.size %>
                 </p>
