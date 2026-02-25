@@ -895,3 +895,11 @@ main.container {
     gap: 8px;
   }
 }
+
+/* Extra horizontal gutter for mobile header */
+@media (max-width: 740px) {
+  .site-header .container {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
