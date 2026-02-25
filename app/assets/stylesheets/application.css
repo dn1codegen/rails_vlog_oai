@@ -357,6 +357,13 @@ main.container {
   color: var(--link);
 }
 
+.post-page-title {
+  margin: 2px 0 10px;
+  font-size: 1.22rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
 .post-card p {
   line-height: 1.45;
   margin-top: 6px;

@@ -1,9 +1,5 @@
 <section class="watch-layout">
   <div class="watch-main">
-    <section class="page-head">
-      <h1><%= @post.title %></h1>
-    </section>
-
     <article class="post-card">
       <% if @post.video.attached? %>
         <div class="post-card-media">
@@ -37,6 +33,8 @@
           <% end %>
         </div>
       <% end %>
+
+      <h1 class="post-page-title"><%= @post.title %></h1>
 
       <% if @media_info.present? %>
         <div class="media-tags" aria-label="Информация о видео">
@@ -168,13 +166,6 @@
               <% end %>
               <div class="related-card__body">
                 <h3 class="related-card__title"><%= link_to related_post.title, post_path(related_post) %></h3>
-                <% if related_post.tag_list.any? %>
-                  <div class="post-tags post-tags--compact" aria-label="Теги похожего поста">
-                    <% related_post.tag_list.first(3).each do |tag| %>
-                      <%= link_to "##{tag}", root_path(q: tag), class: "post-tag post-tag--compact" %>
-                    <% end %>
-                  </div>
-                <% end %>
                 <p class="related-card__meta">
                   <%= l(related_post.created_at, format: :short) %> • Комментариев: <%= related_post.comments.size %>
                 </p>
