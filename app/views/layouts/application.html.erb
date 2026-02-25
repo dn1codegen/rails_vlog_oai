@@ -30,9 +30,8 @@
           <div class="top-menu__left">
             <%= link_to root_path, class: "site-brand" do %>
               <span class="site-brand__badge" aria-hidden="true">▶</span>
-              <span class="site-brand__text">VlogTube</span>
+              <span class="site-brand__text">MediaTUBE</span>
             <% end %>
-            <%= link_to "ВСЕ ПОСТЫ", root_path, class: "top-menu__link" %>
           </div>
           <%= form_with url: root_path, method: :get, local: true, class: "top-menu__search", role: "search" do |f| %>
             <%= f.search_field :q,
