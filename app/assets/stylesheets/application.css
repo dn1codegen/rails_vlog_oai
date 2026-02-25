@@ -97,6 +97,7 @@ main.container {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .top-menu__right {
@@ -345,6 +346,13 @@ main.container {
   text-decoration: none;
 }
 
+.posts-grid .post-card .post-card__title-link {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .post-card h2 a:hover {
   color: var(--link);
 }
@@ -358,6 +366,7 @@ main.container {
   color: var(--muted);
   margin-top: 8px;
   font-size: 0.86rem;
+  overflow-wrap: anywhere;
 }
 
 .media-tags {
@@ -633,6 +642,7 @@ main.container {
   color: var(--muted);
   margin-bottom: 4px;
   font-size: 0.86rem;
+  overflow-wrap: anywhere;
 }
 
 .comment-header {
@@ -640,6 +650,7 @@ main.container {
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .empty {
@@ -663,6 +674,17 @@ main.container {
 }
 
 @media (max-width: 740px) {
+  .top-menu {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    row-gap: 8px;
+  }
+
+  .top-menu__search {
+    grid-column: 1 / -1;
+    order: 10;
+  }
+
   .site-header .container {
     min-height: auto;
     padding: 10px 0;
@@ -674,8 +696,15 @@ main.container {
     gap: 8px;
   }
 
+  .top-menu__left {
+    flex-wrap: nowrap;
+  }
+
   .top-menu__right {
-    justify-content: flex-start;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    width: auto;
+    gap: 6px;
   }
 
   .top-menu__link,
@@ -708,6 +737,18 @@ main.container {
     height: 58px;
     line-height: 58px;
     font-size: 26px;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-menu {
+    gap: 6px;
+  }
+
+  .top-menu__link,
+  .top-menu__button {
+    font-size: 0.72rem;
+    padding: 6px 8px;
   }
 }
 
@@ -814,7 +855,7 @@ main.container {
 
 @media (min-width: 1080px) {
   .watch-layout {
-    grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 30vw, 400px);
     gap: 20px;
   }
 
@@ -828,8 +869,19 @@ main.container {
 .posts-grid .post-card {
   border: 1px solid transparent;
   border-radius: 14px;
+  min-width: 0;
   padding: 8px;
   transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.posts-grid .post-card .post-meta {
+  word-break: break-word;
+}
+
+.posts-grid .post-card .post-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .posts-grid .post-card:hover,
@@ -876,6 +928,10 @@ main.container {
   .posts-grid .post-card {
     padding: 4px;
     border-radius: 12px;
+  }
+
+  .posts-grid .post-card-media {
+    margin: 0 0 10px;
   }
 
   .post-card-media {

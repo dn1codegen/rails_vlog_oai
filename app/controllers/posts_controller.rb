@@ -5,7 +5,7 @@ class PostsController < ApplicationController
 
   def index
     @query = params[:q].to_s.strip
-    @posts = Post.includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob).order(created_at: :desc)
+    @posts = Post.includes(:user, :comments, video_attachment: :blob, thumbnail_attachment: :blob).order(created_at: :desc)
     if @query.present?
       normalized_query = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
       @posts = @posts.where(
@@ -13,7 +13,6 @@ class PostsController < ApplicationController
         query: normalized_query
       )
     end
-    @user_reactions_by_post_id = load_user_reactions(@posts)
   end
 
   def show
@@ -77,15 +76,6 @@ class PostsController < ApplicationController
     return if @post.user == current_user
 
     redirect_to post_path(@post), alert: "Редактировать и удалять можно только свои посты."
-  end
-
-  def load_user_reactions(posts)
-    return {} unless user_signed_in?
-
-    post_ids = posts.map(&:id)
-    return {} if post_ids.empty?
-
-    current_user.post_reactions.where(post_id: post_ids).index_by(&:post_id)
   end
 
   def load_related_posts(post, limit: 10)
