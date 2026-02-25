@@ -81,7 +81,10 @@
         <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
       </div>
 
-      <p class="post-meta">Опубликовано <%= l(@post.created_at, format: :long) %></p>
+      <p class="post-meta">
+        Автор: <%= @post.user&.email || "удаленный пользователь" %> •
+        Опубликовано <%= l(@post.created_at, format: :long) %>
+      </p>
       <% if current_user == @post.user %>
         <div class="action-row">
           <%= link_to "Редактировать", edit_post_path(@post), class: "button button--secondary" %>
@@ -95,7 +98,7 @@
     </article>
 
     <section id="comments" class="panel">
-      <h2>Комментарии</h2>
+      <h2>Комментарии (<%= @comments.size %>)</h2>
 
       <% if @comment.errors.any? %>
         <section class="error-box">
