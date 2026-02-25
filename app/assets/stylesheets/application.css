@@ -422,6 +422,9 @@ main.container {
 }
 
 .reaction-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
   font-size: 0.86rem;
   border: 1px solid var(--line);
@@ -453,13 +456,15 @@ main.container {
 }
 
 .reaction-icon {
+  width: 16px;
+  height: 16px;
   display: inline-block;
-  line-height: 1;
-  font-size: 1rem;
+  flex-shrink: 0;
+  color: currentColor;
 }
 
-.reaction-label {
-  font-size: 0.84rem;
+.reaction-count .reaction-icon {
+  color: #111;
 }
 
 .reaction-value {

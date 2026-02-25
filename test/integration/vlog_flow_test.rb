@@ -296,8 +296,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
     get post_path(post_record)
     assert_response :success
-    assert_match(/aria-label=\"Лайк \(0\)\"/, response.body)
-    assert_match(/aria-label=\"Дизлайк \(1\)\"/, response.body)
+    assert_match(/aria-label=\"Понравилось \(0\)\"/, response.body)
+    assert_match(/aria-label=\"Не понравилось \(1\)\"/, response.body)
   end
 
   test "non-owner cannot edit or delete another user's post" do

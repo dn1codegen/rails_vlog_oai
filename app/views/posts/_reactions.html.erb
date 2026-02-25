@@ -10,27 +10,57 @@
                     method: :post,
                     class: [ *like_classes, "reaction-icon-button" ].join(" "),
                     form: { class: "inline-form" },
-                    "aria-label": "Лайк (#{post.likes_count})",
-                    title: "Лайк" do %>
-        <span class="reaction-icon" aria-hidden="true">👍</span>
-        <span class="reaction-label">Лайк</span>
+                    "aria-label": "Понравилось (#{post.likes_count})" do %>
+        <svg class="reaction-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10v10M7 10l5-8h2v6h5l-1 12h-8V10z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
         <span class="reaction-value"><%= post.likes_count %></span>
       <% end %>
       <%= button_to post_reaction_path(post, kind: "dislike"),
                     method: :post,
                     class: [ *dislike_classes, "reaction-icon-button" ].join(" "),
                     form: { class: "inline-form" },
-                    "aria-label": "Дизлайк (#{post.dislikes_count})",
-                    title: "Дизлайк" do %>
-        <span class="reaction-icon" aria-hidden="true">👎</span>
-        <span class="reaction-label">Дизлайк</span>
+                    "aria-label": "Не понравилось (#{post.dislikes_count})" do %>
+        <svg class="reaction-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 14V4M7 14l5 8h2v-6h5L18 4h-8v10z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
         <span class="reaction-value"><%= post.dislikes_count %></span>
       <% end %>
     </div>
   <% else %>
     <div class="reaction-counts">
-      <span class="reaction-count">👍 <strong><%= post.likes_count %></strong></span>
-      <span class="reaction-count">👎 <strong><%= post.dislikes_count %></strong></span>
+      <span class="reaction-count">
+        <svg class="reaction-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10v10M7 10l5-8h2v6h5l-1 12h-8V10z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
+        <strong><%= post.likes_count %></strong>
+      </span>
+      <span class="reaction-count">
+        <svg class="reaction-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 14V4M7 14l5 8h2v-6h5L18 4h-8v10z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
+        <strong><%= post.dislikes_count %></strong>
+      </span>
     </div>
     <p class="reaction-login-hint">
       <%= link_to "Войдите", new_session_path %>, чтобы оценить пост.
