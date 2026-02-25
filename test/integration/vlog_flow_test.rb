@@ -295,6 +295,18 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match Regexp.new(Regexp.escape(expected_file_size)), response.body
   end
 
+  test "shows related posts sidebar on post page" do
+    current_post = create_post_record(title: "Rails авторизация")
+    related_post = create_post_record(title: "Rails роутинг")
+    create_post_record(title: "Кулинарный влог")
+
+    get post_path(current_post)
+
+    assert_response :success
+    assert_match "Похожие видео", response.body
+    assert_match post_path(related_post), response.body
+  end
+
   private
 
   def uploaded_video

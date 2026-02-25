@@ -1,139 +1,175 @@
-<section class="page-head">
-  <h1><%= @post.title %></h1>
-</section>
-
-<article class="post-card">
-  <% if @post.video.attached? %>
-    <div class="post-card-media">
-      <% if @post.thumbnail.attached? %>
-        <% frame_urls = @preview_frames.map { |attachment| url_for(attachment) } %>
-        <% frame_urls = [url_for(@post.thumbnail)] if frame_urls.empty? %>
-
-        <section class="video-player"
-                 data-controller="video-preview"
-                 data-video-preview-frame-urls-value="<%= frame_urls.to_json %>">
-          <button type="button"
-                  class="video-preview-button"
-                  data-video-preview-target="preview"
-                  data-action="mouseenter->video-preview#selectFrame mousemove->video-preview#selectFrame mouseleave->video-preview#resetPreview click->video-preview#play"
-                  aria-label="Воспроизвести видео">
-            <%= image_tag frame_urls.first,
-                          class: "video video-preview",
-                          alt: "Превью #{@post.title}",
-                          data: { video_preview_target: "image" } %>
-            <span class="video-preview-play">▶</span>
-          </button>
-
-          <%= video_tag url_for(@post.video),
-                        controls: true,
-                        preload: "metadata",
-                        class: "video is-hidden",
-                        data: { video_preview_target: "player" } %>
-        </section>
-      <% else %>
-        <%= video_tag url_for(@post.video), controls: true, preload: "metadata", class: "video" %>
-      <% end %>
-    </div>
-  <% end %>
-
-  <% if @media_info.present? %>
-    <div class="media-tags" aria-label="Информация о видео">
-      <% if @media_info.status == :ok %>
-        <span class="media-tag">
-          <strong>Видео:</strong>
-          <%= @media_info.video_codec.presence || "не определен" %>
-          •
-          <%= @media_info.video_resolution.presence || "не определено" %>
-          •
-          <%= format_bitrate(@media_info.video_bitrate) %>
-        </span>
-        <span class="media-tag">
-          <strong>Аудио:</strong>
-          <%= @media_info.audio_codec.presence || "аудио дорожка отсутствует" %>
-          •
-          <%= @media_info.audio_codec.present? ? format_bitrate(@media_info.audio_bitrate) : "аудио дорожка отсутствует" %>
-        </span>
-      <% else %>
-        <span class="media-tag media-tag--error">
-          Кодеки: <%= @media_info.message.presence || @media_info.status %>
-        </span>
-      <% end %>
-      <span class="media-tag">
-        <strong>Размер файла:</strong>
-        <%= format_file_size(@post.video.blob.byte_size) %>
-      </span>
-    </div>
-  <% end %>
-
-  <% if @post.description.present? %>
-    <p><%= simple_format(@post.description) %></p>
-  <% end %>
-
-  <div id="reactions">
-    <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
-  </div>
-
-  <p class="post-meta">Опубликовано <%= l(@post.created_at, format: :long) %></p>
-  <% if current_user == @post.user %>
-    <div class="action-row">
-      <%= link_to "Редактировать", edit_post_path(@post), class: "button button--secondary" %>
-      <%= button_to "Удалить", post_path(@post),
-                    method: :delete,
-                    class: "button button--danger",
-                    form: { class: "inline-form" },
-                    data: { turbo_confirm: "Удалить этот пост?" } %>
-    </div>
-  <% end %>
-</article>
-
-<section id="comments" class="panel">
-  <h2>Комментарии</h2>
-
-  <% if @comment.errors.any? %>
-    <section class="error-box">
-      <h3>Комментарий не сохранен</h3>
-      <ul>
-        <% @comment.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
+<section class="watch-layout">
+  <div class="watch-main">
+    <section class="page-head">
+      <h1><%= @post.title %></h1>
     </section>
-  <% end %>
 
-  <% if user_signed_in? %>
-    <%= render "comments/form", post: @post, comment: @comment, submit_label: "Добавить комментарий" %>
-  <% else %>
-    <p class="post-meta">
-      Чтобы оставить комментарий, <%= link_to "войдите", new_session_path %> или
-      <%= link_to "зарегистрируйтесь", new_registration_path %>.
-    </p>
-  <% end %>
+    <article class="post-card">
+      <% if @post.video.attached? %>
+        <div class="post-card-media">
+          <% if @post.thumbnail.attached? %>
+            <% frame_urls = @preview_frames.map { |attachment| url_for(attachment) } %>
+            <% frame_urls = [url_for(@post.thumbnail)] if frame_urls.empty? %>
 
-  <hr>
+            <section class="video-player"
+                     data-controller="video-preview"
+                     data-video-preview-frame-urls-value="<%= frame_urls.to_json %>">
+              <button type="button"
+                      class="video-preview-button"
+                      data-video-preview-target="preview"
+                      data-action="mouseenter->video-preview#selectFrame mousemove->video-preview#selectFrame mouseleave->video-preview#resetPreview click->video-preview#play"
+                      aria-label="Воспроизвести видео">
+                <%= image_tag frame_urls.first,
+                              class: "video video-preview",
+                              alt: "Превью #{@post.title}",
+                              data: { video_preview_target: "image" } %>
+                <span class="video-preview-play">▶</span>
+              </button>
 
-  <% if @comments.any? %>
-    <% @comments.each do |comment| %>
-      <article class="comment">
-        <div class="comment-header">
-          <p class="comment-meta">
-            <strong><%= comment.user&.email || comment.author_name %></strong> •
-            <%= l(comment.created_at, format: :short) %>
-          </p>
-          <% if current_user == comment.user %>
-            <div class="action-row action-row--tight">
-              <%= link_to "Редактировать", edit_post_comment_path(@post, comment), class: "button button--secondary button--small" %>
-              <%= button_to "Удалить", post_comment_path(@post, comment),
-                            method: :delete,
-                            class: "button button--danger button--small",
-                            form: { class: "inline-form" },
-                            data: { turbo_confirm: "Удалить комментарий?" } %>
-            </div>
+              <%= video_tag url_for(@post.video),
+                            controls: true,
+                            preload: "metadata",
+                            class: "video is-hidden",
+                            data: { video_preview_target: "player" } %>
+            </section>
+          <% else %>
+            <%= video_tag url_for(@post.video), controls: true, preload: "metadata", class: "video" %>
           <% end %>
         </div>
-        <p><%= simple_format(comment.body) %></p>
-      </article>
-    <% end %>
-  <% else %>
-    <p class="empty">Пока нет комментариев.</p>
-  <% end %>
+      <% end %>
+
+      <% if @media_info.present? %>
+        <div class="media-tags" aria-label="Информация о видео">
+          <% if @media_info.status == :ok %>
+            <span class="media-tag">
+              <strong>Видео:</strong>
+              <%= @media_info.video_codec.presence || "не определен" %>
+              •
+              <%= @media_info.video_resolution.presence || "не определено" %>
+              •
+              <%= format_bitrate(@media_info.video_bitrate) %>
+            </span>
+            <span class="media-tag">
+              <strong>Аудио:</strong>
+              <%= @media_info.audio_codec.presence || "аудио дорожка отсутствует" %>
+              •
+              <%= @media_info.audio_codec.present? ? format_bitrate(@media_info.audio_bitrate) : "аудио дорожка отсутствует" %>
+            </span>
+          <% else %>
+            <span class="media-tag media-tag--error">
+              Кодеки: <%= @media_info.message.presence || @media_info.status %>
+            </span>
+          <% end %>
+          <span class="media-tag">
+            <strong>Размер файла:</strong>
+            <%= format_file_size(@post.video.blob.byte_size) %>
+          </span>
+        </div>
+      <% end %>
+
+      <% if @post.description.present? %>
+        <p><%= simple_format(@post.description) %></p>
+      <% end %>
+
+      <div id="reactions">
+        <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
+      </div>
+
+      <p class="post-meta">Опубликовано <%= l(@post.created_at, format: :long) %></p>
+      <% if current_user == @post.user %>
+        <div class="action-row">
+          <%= link_to "Редактировать", edit_post_path(@post), class: "button button--secondary" %>
+          <%= button_to "Удалить", post_path(@post),
+                        method: :delete,
+                        class: "button button--danger",
+                        form: { class: "inline-form" },
+                        data: { turbo_confirm: "Удалить этот пост?" } %>
+        </div>
+      <% end %>
+    </article>
+
+    <section id="comments" class="panel">
+      <h2>Комментарии</h2>
+
+      <% if @comment.errors.any? %>
+        <section class="error-box">
+          <h3>Комментарий не сохранен</h3>
+          <ul>
+            <% @comment.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+
+      <% if user_signed_in? %>
+        <%= render "comments/form", post: @post, comment: @comment, submit_label: "Добавить комментарий" %>
+      <% else %>
+        <p class="post-meta">
+          Чтобы оставить комментарий, <%= link_to "войдите", new_session_path %> или
+          <%= link_to "зарегистрируйтесь", new_registration_path %>.
+        </p>
+      <% end %>
+
+      <hr>
+
+      <% if @comments.any? %>
+        <% @comments.each do |comment| %>
+          <article class="comment">
+            <div class="comment-header">
+              <p class="comment-meta">
+                <strong><%= comment.user&.email || comment.author_name %></strong> •
+                <%= l(comment.created_at, format: :short) %>
+              </p>
+              <% if current_user == comment.user %>
+                <div class="action-row action-row--tight">
+                  <%= link_to "Редактировать", edit_post_comment_path(@post, comment), class: "button button--secondary button--small" %>
+                  <%= button_to "Удалить", post_comment_path(@post, comment),
+                                method: :delete,
+                                class: "button button--danger button--small",
+                                form: { class: "inline-form" },
+                                data: { turbo_confirm: "Удалить комментарий?" } %>
+                </div>
+              <% end %>
+            </div>
+            <p><%= simple_format(comment.body) %></p>
+          </article>
+        <% end %>
+      <% else %>
+        <p class="empty">Пока нет комментариев.</p>
+      <% end %>
+    </section>
+  </div>
+
+  <aside class="watch-sidebar" aria-label="Похожие видео">
+    <section class="panel">
+      <h2 class="watch-sidebar__title">Похожие видео</h2>
+      <% if @related_posts.any? %>
+        <div class="watch-sidebar__list">
+          <% @related_posts.each do |related_post| %>
+            <article class="related-card">
+              <%= link_to post_path(related_post), class: "related-card__thumb-link" do %>
+                <% if related_post.thumbnail.attached? %>
+                  <%= image_tag related_post.thumbnail,
+                                class: "related-card__thumb",
+                                alt: "Превью для #{related_post.title}",
+                                loading: "lazy" %>
+                <% else %>
+                  <div class="related-card__placeholder">Превью...</div>
+                <% end %>
+              <% end %>
+              <div class="related-card__body">
+                <h3 class="related-card__title"><%= link_to related_post.title, post_path(related_post) %></h3>
+                <p class="related-card__meta">
+                  <%= l(related_post.created_at, format: :short) %> • Комментариев: <%= related_post.comments.size %>
+                </p>
+              </div>
+            </article>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="empty">Похожие видео пока не найдены.</p>
+      <% end %>
+    </section>
+  </aside>
 </section>
