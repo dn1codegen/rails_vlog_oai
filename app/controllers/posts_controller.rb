@@ -1,11 +1,14 @@
 class PostsController < ApplicationController
   before_action :set_post, only: %i[show edit update destroy]
   before_action :require_authentication, only: %i[new create edit update destroy youtube_options]
+  before_action :authorize_post_visibility!, only: %i[show]
   before_action :authorize_post_owner!, only: %i[edit update destroy]
 
   def index
     @query = params[:q].to_s.strip
-    @posts = Post.includes(:user, :comments, video_attachment: :blob, thumbnail_attachment: :blob).order(created_at: :desc)
+    @posts = Post.visible_to(current_user)
+                 .includes(:user, :comments, video_attachment: :blob, thumbnail_attachment: :blob)
+                 .order(created_at: :desc)
     if @query.present?
       normalized_query = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
       @posts = @posts.where(
@@ -93,7 +96,7 @@ class PostsController < ApplicationController
   end
 
   def post_params
-    params.require(:post).permit(:title, :description, :tags, :video, :youtube_url, :youtube_quality)
+    params.require(:post).permit(:title, :description, :tags, :visibility, :video, :youtube_url, :youtube_quality)
   end
 
   def attach_video_from_youtube_if_needed(post)
@@ -121,8 +124,15 @@ class PostsController < ApplicationController
     redirect_to post_path(@post), alert: "Редактировать и удалять можно только свои посты."
   end
 
+  def authorize_post_visibility!
+    return if @post.visible_to?(current_user)
+
+    redirect_to root_path, alert: "Этот пост приватный и доступен только автору."
+  end
+
   def load_related_posts(post, limit: 10)
-    base_scope = Post.where.not(id: post.id)
+    base_scope = Post.visible_to(current_user)
+                     .where.not(id: post.id)
                      .includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob)
 
     keyword_matches = []

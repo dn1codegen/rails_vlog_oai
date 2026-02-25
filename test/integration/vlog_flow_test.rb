@@ -140,6 +140,64 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match "Скачать и опубликовать", response.body
     assert_match(/data-youtube-import-target=\"progress\"/, response.body)
+    assert_match "Кто может видеть пост", response.body
+    assert_match "Только я (приватный пост)", response.body
+  end
+
+  test "private post is visible only to author" do
+    owner = create_user(email: "private-owner@example.com")
+    intruder = create_user(email: "private-intruder@example.com")
+    sign_in_as(owner)
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
+      assert_difference("Post.count", 1) do
+        post posts_path, params: {
+          post: {
+            title: "Приватный выпуск",
+            description: "Этот пост видит только автор",
+            visibility: "private_post",
+            video: uploaded_video
+          }
+        }
+      end
+    end
+
+    private_post = Post.order(:id).last
+    assert_redirected_to post_path(private_post)
+    assert private_post.visibility_private_post?
+
+    get root_path
+    assert_response :success
+    assert_match "Приватный выпуск", response.body
+
+    delete session_path
+    assert_redirected_to root_path
+
+    get root_path
+    assert_response :success
+    assert_no_match "Приватный выпуск", response.body
+
+    get post_path(private_post)
+    assert_redirected_to root_path
+
+    sign_in_as(intruder)
+
+    get root_path
+    assert_response :success
+    assert_no_match "Приватный выпуск", response.body
+
+    get post_path(private_post)
+    assert_redirected_to root_path
+
+    assert_no_difference("Comment.count") do
+      post post_comments_path(private_post), params: { comment: { body: "Не должно сохраниться" } }
+    end
+    assert_redirected_to root_path
+
+    assert_no_difference("PostReaction.count") do
+      post post_reaction_path(private_post), params: { kind: "like" }
+    end
+    assert_redirected_to root_path
   end
 
   test "rejects unsupported video codec on create" do
@@ -467,12 +525,13 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     YoutubeVideoImporter.forced_download_result = previous
   end
 
-  def create_post_record(title: "Тестовый пост", user: nil, tags: "")
+  def create_post_record(title: "Тестовый пост", user: nil, tags: "", visibility: "public_post")
     post_record = Post.new(
       user: user || create_user(email: "post-owner-#{SecureRandom.hex(4)}@example.com"),
       title:,
       description: "Описание",
-      tags:
+      tags:,
+      visibility:
     )
     with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
       File.open(Rails.root.join("test/fixtures/files/sample.mp4")) do |file|

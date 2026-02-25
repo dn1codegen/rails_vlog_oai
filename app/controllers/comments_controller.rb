@@ -35,6 +35,7 @@ class CommentsController < ApplicationController
 
   def set_post
     @post = Post.find(params[:post_id])
+    authorize_post_visibility!
   end
 
   def require_comment_authentication
@@ -64,5 +65,11 @@ class CommentsController < ApplicationController
     end
 
     @media_info = MediaStreamInspector.inspect(@post.video.blob) if @post.video.attached?
+  end
+
+  def authorize_post_visibility!
+    return if @post.visible_to?(current_user)
+
+    redirect_to root_path, alert: "Этот пост приватный и доступен только автору."
   end
 end

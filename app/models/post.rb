@@ -20,6 +20,7 @@ class Post < ApplicationRecord
   has_many :post_reactions, dependent: :destroy
 
   attr_accessor :youtube_url, :youtube_quality
+  enum :visibility, { public_post: 0, private_post: 1 }, default: :public_post, prefix: :visibility
 
   validates :user, presence: true
   validates :title, presence: true, length: { maximum: 120 }
@@ -33,9 +34,20 @@ class Post < ApplicationRecord
   validate :video_content_type_supported
   validate :video_codec_supported
   after_commit :request_thumbnail_generation, on: :create
+  scope :visible_to, ->(user) do
+    if user.present?
+      where("posts.visibility = :public_visibility OR posts.user_id = :user_id", public_visibility: visibilities.fetch("public_post"), user_id: user.id)
+    else
+      where(visibility: visibilities.fetch("public_post"))
+    end
+  end
 
   def tag_list
     tags.to_s.split(",").map(&:strip).reject(&:blank?)
+  end
+
+  def visible_to?(user)
+    visibility_public_post? || user == self.user
   end
 
   def request_thumbnail_generation

@@ -24,6 +24,7 @@ module Posts
 
     def set_post
       @post = Post.find(params[:post_id])
+      authorize_post_visibility!
     end
 
     def require_reaction_authentication
@@ -34,6 +35,12 @@ module Posts
 
     def fallback_path
       post_path(@post, anchor: "reactions")
+    end
+
+    def authorize_post_visibility!
+      return if @post.visible_to?(current_user)
+
+      redirect_to root_path, alert: "Этот пост приватный и доступен только автору."
     end
   end
 end
