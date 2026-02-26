@@ -299,17 +299,30 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
     post import_videos_profile_path
     assert_redirected_to new_session_path
+
+    delete destroy_selected_posts_profile_path
+    assert_redirected_to new_session_path
+
+    delete destroy_all_posts_profile_path
+    assert_redirected_to new_session_path
   end
 
   test "user can open and update profile" do
     user = create_user(email: "profile-owner@example.com")
-    create_post_record(title: "Публичный профильный пост", user:, visibility: "public_post")
-    create_post_record(title: "Личный профильный пост", user:, visibility: "private_post")
+    public_profile_post = create_post_record(title: "Публичный профильный пост", user:, visibility: "public_post")
+    private_profile_post = create_post_record(title: "Личный профильный пост", user:, visibility: "private_post")
     sign_in_as(user)
 
     get profile_path
     assert_response :success
     assert_match "profile-owner@example.com", response.body
+    assert_match edit_post_path(public_profile_post), response.body
+    assert_match edit_post_path(private_profile_post), response.body
+    assert_equal 2, response.body.scan("profile-post-delete-form").size
+    assert_match destroy_selected_posts_profile_path, response.body
+    assert_match destroy_all_posts_profile_path, response.body
+    assert_match "Удалить выбранные", response.body
+    assert_match "Удалить все посты", response.body
 
     patch profile_path, params: {
       user: {
@@ -327,6 +340,91 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     user.reload
     assert_equal "Автор канала", user.name
     assert_equal "Пишу про Ruby и видео.", user.bio
+  end
+
+  test "profile paginates posts by 10 and shows total count in heading" do
+    user = create_user(email: "profile-pagination@example.com")
+    created_posts = 12.times.map do |index|
+      create_post_record(title: "Пост профиля #{index + 1}", user:, visibility: "public_post")
+    end
+    sign_in_as(user)
+
+    get profile_path
+    assert_response :success
+    assert_match "Мои видео (12)", response.body
+    assert_match "Страница 1 из 2", response.body
+    assert_match profile_path(page: 2), response.body
+    assert_equal 10, response.body.scan("profile-post-delete-form").size
+    assert_equal 10, response.body.scan("profile-post__checkbox").size
+    assert_match "№1", response.body
+    assert_match "№10", response.body
+    assert_no_match post_path(created_posts.first), response.body
+    assert_match post_path(created_posts.last), response.body
+
+    get profile_path, params: { page: 2 }
+    assert_response :success
+    assert_match "Мои видео (12)", response.body
+    assert_match "Страница 2 из 2", response.body
+    assert_match profile_path(page: 1), response.body
+    assert_equal 2, response.body.scan("profile-post-delete-form").size
+    assert_equal 2, response.body.scan("profile-post__checkbox").size
+    assert_match "№11", response.body
+    assert_match "№12", response.body
+    assert_match post_path(created_posts.first), response.body
+    assert_match post_path(created_posts.second), response.body
+    assert_no_match post_path(created_posts.last), response.body
+  end
+
+  test "user can delete selected posts from profile list" do
+    user = create_user(email: "profile-bulk-delete@example.com")
+    first_post = create_post_record(title: "Первый для удаления", user:, visibility: "public_post")
+    second_post = create_post_record(title: "Второй для удаления", user:, visibility: "public_post")
+    kept_post = create_post_record(title: "Оставшийся пост", user:, visibility: "public_post")
+    sign_in_as(user)
+
+    assert_difference("Post.count", -2) do
+      delete destroy_selected_posts_profile_path, params: { post_ids: [ first_post.id, second_post.id ], page: 1 }
+    end
+
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_response :success
+    assert_match "Удалено постов: 2", response.body
+    assert_no_match first_post.title, response.body
+    assert_no_match second_post.title, response.body
+    assert_match kept_post.title, response.body
+  end
+
+  test "user can delete all posts from profile list" do
+    user = create_user(email: "profile-delete-all@example.com")
+    create_post_record(title: "Пост для полного удаления 1", user:, visibility: "public_post")
+    create_post_record(title: "Пост для полного удаления 2", user:, visibility: "public_post")
+    sign_in_as(user)
+
+    assert_difference("Post.count", -2) do
+      delete destroy_all_posts_profile_path
+    end
+
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_response :success
+    assert_match "Удалены все посты: 2", response.body
+    assert_match "Вы пока не опубликовали ни одного видео.", response.body
+  end
+
+  test "user deletes post from profile and stays on profile page" do
+    user = create_user(email: "profile-delete@example.com")
+    post_record = create_post_record(title: "Пост для удаления из профиля", user:, visibility: "public_post")
+    sign_in_as(user)
+
+    assert_difference("Post.count", -1) do
+      delete post_path(post_record), params: { from_profile: true }
+    end
+
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_response :success
+    assert_no_match "Пост для удаления из профиля", response.body
   end
 
   test "user can export own videos to zip with json manifest" do
@@ -465,15 +563,25 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
   test "user can toggle post visibility from profile list" do
     user = create_user(email: "visibility-owner@example.com")
     post_record = create_post_record(title: "Пост для переключения", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 1", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 2", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 3", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 4", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 5", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 6", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 7", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 8", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 9", user:, visibility: "public_post")
+    create_post_record(title: "Дополнительный пост 10", user:, visibility: "public_post")
     sign_in_as(user)
 
-    patch profile_post_visibility_path(post_record), params: { visibility: "private_post" }
-    assert_redirected_to profile_path
+    patch profile_post_visibility_path(post_record), params: { visibility: "private_post", page: 2 }
+    assert_redirected_to profile_path(page: 2)
     post_record.reload
     assert post_record.visibility_private_post?
 
-    patch profile_post_visibility_path(post_record), params: { visibility: "public_post" }
-    assert_redirected_to profile_path
+    patch profile_post_visibility_path(post_record), params: { visibility: "public_post", page: 2 }
+    assert_redirected_to profile_path(page: 2)
     post_record.reload
     assert post_record.visibility_public_post?
   end

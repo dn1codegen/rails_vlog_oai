@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   resource :profile, only: %i[show edit update] do
     get :export_videos
     post :import_videos
+    delete :destroy_selected_posts
+    delete :destroy_all_posts
   end
   patch "profile/posts/:id/visibility", to: "profiles#update_post_visibility", as: :profile_post_visibility
 

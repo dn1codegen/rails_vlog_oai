@@ -66,7 +66,7 @@ class PostsController < ApplicationController
 
   def destroy
     @post.destroy
-    redirect_to posts_path, notice: "Пост удален"
+    redirect_to destroy_redirect_path, notice: "Пост удален"
   end
 
   def youtube_options
@@ -172,6 +172,17 @@ class PostsController < ApplicationController
                                .to_a
 
     keyword_matches + fallback_posts
+  end
+
+  def destroy_redirect_path
+    if params[:from_profile].to_s == "true" || params[:from_profile].to_s == "1"
+      page = params[:page].to_i
+      return profile_path if page <= 1
+
+      return profile_path(page:)
+    end
+
+    posts_path
   end
 
   def related_keywords(post)
