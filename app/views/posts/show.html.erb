@@ -34,7 +34,18 @@
         </div>
       <% end %>
 
-      <h1 class="post-page-title"><%= @post.title %></h1>
+      <div class="post-header-row">
+        <div class="post-header-main">
+          <h1 class="post-page-title"><%= @post.title %></h1>
+          <p class="post-meta">
+            Автор: <%= @post.user&.display_name || "удаленный пользователь" %> •
+            Опубликовано <%= l(@post.created_at, format: :long) %>
+          </p>
+        </div>
+        <div id="reactions" class="post-header-reactions">
+          <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
+        </div>
+      </div>
 
       <% if @media_info.present? %>
         <div class="media-tags" aria-label="Информация о видео">
@@ -77,14 +88,6 @@
         </div>
       <% end %>
 
-      <div id="reactions">
-        <%= render "reactions", post: @post, user_reaction: @current_user_reaction %>
-      </div>
-
-      <p class="post-meta">
-        Автор: <%= @post.user&.display_name || "удаленный пользователь" %> •
-        Опубликовано <%= l(@post.created_at, format: :long) %>
-      </p>
       <% if current_user == @post.user %>
         <div class="action-row">
           <%= link_to "Редактировать", edit_post_path(@post), class: "button button--secondary" %>

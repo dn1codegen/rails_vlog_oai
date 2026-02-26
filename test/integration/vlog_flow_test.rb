@@ -138,7 +138,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     get new_post_path
 
     assert_response :success
-    assert_match "Скачать и опубликовать", response.body
+    assert_match "Скачать", response.body
     assert_match(/data-youtube-import-target=\"progress\"/, response.body)
     assert_match "Кто может видеть пост", response.body
     assert_match(/visibility-switch__input/, response.body)

@@ -470,6 +470,32 @@ main.container {
   font-weight: 700;
 }
 
+.post-header-row {
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.post-header-main {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.post-header-main .post-page-title {
+  margin: 0 0 6px;
+}
+
+.post-header-main .post-meta {
+  margin-top: 0;
+}
+
+.post-header-reactions {
+  flex: 0 0 auto;
+}
+
 .post-card p {
   line-height: 1.45;
   margin-top: 6px;
@@ -602,6 +628,20 @@ main.container {
   margin: 0;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.post-header-reactions .reaction-bar {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+.post-header-reactions .reaction-actions,
+.post-header-reactions .reaction-counts {
+  justify-content: flex-end;
+}
+
+.post-header-reactions .reaction-login-hint {
+  text-align: right;
 }
 
 .action-row {
