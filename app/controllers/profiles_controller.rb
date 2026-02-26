@@ -59,7 +59,10 @@ class ProfilesController < ApplicationController
   def import_videos
     result = ProfileVideoArchiveImporter.call(user: current_user, archive: params[:archive])
     if result.status != :ok
-      redirect_to profile_path, alert: result.message.presence || "Не удалось импортировать архив."
+      preview_errors = result.errors.to_a.first(2).join(" | ")
+      error_message = result.message.presence || "Не удалось импортировать архив."
+      error_message = "#{error_message} #{preview_errors}" if preview_errors.present?
+      redirect_to profile_path, alert: error_message
       return
     end
 

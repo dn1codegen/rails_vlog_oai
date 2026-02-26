@@ -409,6 +409,59 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     archive_file&.unlink
   end
 
+  test "user can import videos from repacked archive with nested root folder" do
+    owner = create_user(email: "profile-export-owner-nested@example.com")
+    create_post_record(title: "Вложенный архив 1", user: owner, tags: "rails", visibility: "private_post")
+    create_post_record(title: "Вложенный архив 2", user: owner, tags: "backend", visibility: "public_post")
+
+    sign_in_as(owner)
+    get export_videos_profile_path
+    assert_response :success
+    raw_archive_payload = response.body
+
+    wrapped_archive_payload = Zip::OutputStream.write_buffer do |output_stream|
+      Zip::File.open_buffer(raw_archive_payload) do |source_zip|
+        source_zip.each do |entry|
+          next if entry.directory?
+
+          output_stream.put_next_entry(File.join("saved_export", entry.name))
+          output_stream.write(entry.get_input_stream.read)
+        end
+      end
+    end.string
+
+    delete session_path
+    assert_redirected_to root_path
+
+    importer = create_user(email: "profile-importer-nested@example.com")
+    sign_in_as(importer)
+
+    archive_file = Tempfile.new([ "profile-import-nested-", ".zip" ])
+    archive_file.binmode
+    archive_file.write(wrapped_archive_payload)
+    archive_file.rewind
+
+    upload = Rack::Test::UploadedFile.new(
+      archive_file.path,
+      "application/zip",
+      original_filename: "saved-export.zip"
+    )
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
+      assert_difference("Post.count", 2) do
+        post import_videos_profile_path, params: { archive: upload }
+      end
+    end
+
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_match "Импортировано видео: 2", response.body
+    assert_equal 2, importer.posts.count
+  ensure
+    archive_file&.close
+    archive_file&.unlink
+  end
+
   test "user can toggle post visibility from profile list" do
     user = create_user(email: "visibility-owner@example.com")
     post_record = create_post_record(title: "Пост для переключения", user:, visibility: "public_post")

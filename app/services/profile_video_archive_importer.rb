@@ -4,6 +4,7 @@ require "zip"
 
 class ProfileVideoArchiveImporter
   Result = Struct.new(:status, :imported_count, :failed_count, :errors, :message, keyword_init: true)
+  Manifest = Struct.new(:payload, :base_dir, keyword_init: true)
 
   MANIFEST_FILENAME = ProfileVideoArchiveExporter::MANIFEST_FILENAME
   ARCHIVE_FORMAT = ProfileVideoArchiveExporter::ARCHIVE_FORMAT
@@ -21,13 +22,13 @@ class ProfileVideoArchiveImporter
         return Result.new(status: :invalid_archive, imported_count: 0, failed_count: 0, errors: [], message: "В архиве отсутствует файл #{MANIFEST_FILENAME}")
       end
 
-      posts_payload = validate_manifest(manifest)
+      posts_payload = validate_manifest(manifest.payload)
       unless posts_payload
         return Result.new(status: :invalid_archive, imported_count: 0, failed_count: 0, errors: [], message: "Файл #{MANIFEST_FILENAME} имеет неверный формат")
       end
 
       posts_payload.each_with_index do |post_payload, index|
-        import_result = import_post(user:, zip_file:, post_payload:, index:)
+        import_result = import_post(user:, zip_file:, post_payload:, index:, manifest_base_dir: manifest.base_dir)
         if import_result[:ok]
           imported_count += 1
         else
@@ -50,15 +51,24 @@ class ProfileVideoArchiveImporter
 
   def self.read_manifest(zip_file)
     manifest_entry = zip_file.find_entry(MANIFEST_FILENAME)
+    manifest_entry ||= zip_file.entries.find do |entry|
+      next if entry.directory?
+
+      File.basename(entry.name.to_s) == MANIFEST_FILENAME
+    end
     return unless manifest_entry
 
-    JSON.parse(manifest_entry.get_input_stream.read)
+    Manifest.new(
+      payload: JSON.parse(manifest_entry.get_input_stream.read),
+      base_dir: File.dirname(manifest_entry.name.to_s)
+    )
   end
   private_class_method :read_manifest
 
   def self.validate_manifest(manifest)
     return unless manifest.is_a?(Hash)
-    return unless manifest["format"].to_s == ARCHIVE_FORMAT
+    format = manifest["format"].to_s
+    return unless format.blank? || format == ARCHIVE_FORMAT
 
     posts_payload = manifest["posts"]
     return posts_payload if posts_payload.is_a?(Array)
@@ -67,13 +77,13 @@ class ProfileVideoArchiveImporter
   end
   private_class_method :validate_manifest
 
-  def self.import_post(user:, zip_file:, post_payload:, index:)
+  def self.import_post(user:, zip_file:, post_payload:, index:, manifest_base_dir:)
     return { ok: false, error: "Пост ##{index + 1}: неверный JSON-объект" } unless post_payload.is_a?(Hash)
 
     video_path = post_payload["video_path"].to_s
     return { ok: false, error: "Пост ##{index + 1}: отсутствует путь к видео" } if video_path.blank?
 
-    video_entry = zip_file.find_entry(video_path)
+    video_entry = find_video_entry(zip_file:, video_path:, manifest_base_dir:)
     return { ok: false, error: "Пост ##{index + 1}: файл #{video_path} не найден в архиве" } unless video_entry
 
     post = user.posts.new(
@@ -106,6 +116,20 @@ class ProfileVideoArchiveImporter
     { ok: false, error: "Пост ##{index + 1}: #{e.message}" }
   end
   private_class_method :import_post
+
+  def self.find_video_entry(zip_file:, video_path:, manifest_base_dir:)
+    normalized_path = video_path.to_s.tr("\\", "/").sub(%r{\A\./+}, "")
+    return if normalized_path.blank?
+
+    direct_entry = zip_file.find_entry(normalized_path)
+    return direct_entry if direct_entry
+
+    return if manifest_base_dir.blank? || manifest_base_dir == "."
+
+    relative_path = File.join(manifest_base_dir, normalized_path).tr("\\", "/")
+    zip_file.find_entry(relative_path)
+  end
+  private_class_method :find_video_entry
 
   def self.normalize_visibility(raw_visibility)
     visibility = raw_visibility.to_s
