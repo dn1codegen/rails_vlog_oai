@@ -58,6 +58,12 @@ env:
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
 
+    # Large profile archive uploads/imports may take longer than Thruster defaults.
+    THRUSTER_HTTP_READ_TIMEOUT: 600
+    THRUSTER_HTTP_WRITE_TIMEOUT: 600
+    # Keep request body size unlimited (Thruster default) to avoid accidental host-level overrides.
+    THRUSTER_MAX_REQUEST_BODY: 0
+
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
 aliases:
