@@ -32,13 +32,16 @@
 <section class="panel profile-archive-panel">
   <h2>Экспорт и импорт архива</h2>
   <p class="profile-archive-panel__hint">
-    Скачайте ZIP-архив со своими видео и файлом <code>posts.json</code>, либо загрузите архив такого же формата.
+    Для экспорта выделите нужные посты в списке ниже и нажмите «Экспортировать выбранные».
+    Импорт принимает ZIP-архив с файлом <code>posts.json</code>.
   </p>
 
   <div class="profile-archive-panel__actions">
-    <%= link_to "Скачать архив моих видео", export_videos_profile_path, class: "button" %>
-
-    <%= form_with url: import_videos_profile_path, method: :post, html: { multipart: true }, class: "profile-import-form" do %>
+    <%= form_with url: import_videos_profile_path,
+                  method: :post,
+                  html: { multipart: true },
+                  class: "profile-import-form",
+                  data: { turbo: false } do %>
       <label for="archive_file">Импорт из ZIP-архива</label>
       <%= file_field_tag :archive, id: "archive_file", accept: ".zip,application/zip", required: true %>
       <%= submit_tag "Импортировать архив", class: "button button--secondary" %>
@@ -46,20 +49,29 @@
   </div>
 </section>
 
-<section class="panel">
+<section class="panel" data-controller="profile-bulk-selection">
   <h2>Мои видео (<%= @posts_count %>)</h2>
 
   <% if @profile_posts.any? %>
     <div class="profile-bulk-actions">
+      <button type="button"
+              class="button button--secondary button--small profile-bulk-actions__toggle"
+              data-action="profile-bulk-selection#selectAllPosts"
+              data-profile-bulk-selection-target="toggleButton">
+        ВЫДЕЛИТЬ ВСЕ ПОСТЫ
+      </button>
       <%= form_with url: destroy_selected_posts_profile_path,
                     method: :delete,
                     id: "profile-bulk-delete-form",
-                    class: "profile-bulk-delete-form" do %>
+                    class: "profile-bulk-delete-form",
+                    data: { turbo: false } do %>
         <%= hidden_field_tag :page, @current_page %>
         <%= submit_tag "Удалить выбранные", class: "button button--danger button--small", data: { turbo_confirm: "Удалить выбранные посты?" } %>
-      <% end %>
-      <%= form_with url: destroy_all_posts_profile_path, method: :delete, class: "profile-bulk-delete-form" do %>
-        <%= submit_tag "Удалить все посты", class: "button button--danger button--small", data: { turbo_confirm: "Удалить все ваши посты?" } %>
+        <%= button_tag "Экспортировать выбранные",
+                       type: :submit,
+                       class: "button button--small",
+                       formaction: export_videos_profile_path,
+                       formmethod: "get" %>
       <% end %>
     </div>
 
@@ -78,7 +90,11 @@
                                   false,
                                   id: "profile_post_select_#{post.id}",
                                   form: "profile-bulk-delete-form",
-                                  class: "profile-post__checkbox" %>
+                                  class: "profile-post__checkbox",
+                                  data: {
+                                    profile_bulk_selection_target: "checkbox",
+                                    action: "change->profile-bulk-selection#syncButtonLabel"
+                                  } %>
                 <span class="profile-post__number">№<%= post_number %></span>
               </label>
               <h3><%= link_to post.title, post_path(post) %></h3>

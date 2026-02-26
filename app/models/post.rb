@@ -20,6 +20,7 @@ class Post < ApplicationRecord
   has_many :post_reactions, dependent: :destroy
 
   attr_accessor :youtube_url, :youtube_quality
+  attr_accessor :skip_video_codec_validation
   enum :visibility, { public_post: 0, private_post: 1 }, default: :public_post, prefix: :visibility
 
   validates :user, presence: true
@@ -32,7 +33,7 @@ class Post < ApplicationRecord
   before_validation :normalize_tags
   validate :video_presence
   validate :video_content_type_supported
-  validate :video_codec_supported
+  validate :video_codec_supported, unless: :skip_video_codec_validation
   after_commit :request_thumbnail_generation, on: :create
   scope :visible_to, ->(user) do
     if user.present?

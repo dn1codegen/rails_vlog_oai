@@ -9,13 +9,14 @@ class ProfileVideoArchiveExporter
   ARCHIVE_FORMAT = "vlog_posts_archive".freeze
   ARCHIVE_VERSION = 1
 
-  def self.call(user:)
+  def self.call(user:, posts: nil)
+    source_posts = posts || user.posts
     exported_posts = []
     archive_data = Zip::OutputStream.write_buffer do |zip_stream|
-      user.posts
-          .includes(video_attachment: :blob)
-          .order(created_at: :asc)
-          .each do |post|
+      source_posts
+        .includes(video_attachment: :blob)
+        .order(created_at: :asc)
+        .each do |post|
         next unless post.video.attached?
 
         video_path = archive_video_path(post:, index: exported_posts.size + 1)

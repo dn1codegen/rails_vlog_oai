@@ -92,6 +92,7 @@ class ProfileVideoArchiveImporter
       tags: post_payload["tags"],
       visibility: normalize_visibility(post_payload["visibility"])
     )
+    post.skip_video_codec_validation = true
 
     filename = post_payload["original_filename"].to_s.strip
     filename = File.basename(video_path) if filename.blank?

@@ -1481,6 +1481,12 @@ main.container {
 .profile-bulk-delete-form {
   margin: 0;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-bulk-actions__toggle {
+  margin-right: auto;
 }
 
 .profile-archive-panel__hint {

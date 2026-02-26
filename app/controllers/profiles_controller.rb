@@ -92,7 +92,19 @@ class ProfilesController < ApplicationController
   end
 
   def export_videos
-    result = ProfileVideoArchiveExporter.call(user: current_user)
+    post_ids = Array(params[:post_ids]).map(&:to_i).select(&:positive?).uniq
+    if post_ids.empty?
+      redirect_to profile_redirect_path, alert: "Выберите посты для экспорта."
+      return
+    end
+
+    posts = current_user.posts.where(id: post_ids)
+    if posts.empty?
+      redirect_to profile_redirect_path, alert: "Выбранные посты не найдены."
+      return
+    end
+
+    result = ProfileVideoArchiveExporter.call(user: current_user, posts:)
     if result.status != :ok
       redirect_to profile_path, alert: result.message.presence || "Не удалось сформировать архив видео."
       return
