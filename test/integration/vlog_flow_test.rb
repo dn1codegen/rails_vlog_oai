@@ -323,6 +323,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "Удалить выбранные", response.body
     assert_match "Экспортировать выбранные", response.body
     assert_match "ВЫДЕЛИТЬ ВСЕ ПОСТЫ", response.body
+    assert_match "profile-selected-posts-#{user.id}", response.body
+    assert_match "togglePostSelection", response.body
     assert_no_match "Удалить все посты", response.body
     assert_no_match "Скачать архив моих видео", response.body
 
