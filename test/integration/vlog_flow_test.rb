@@ -144,6 +144,10 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match(/visibility-switch__input/, response.body)
     assert_match "Публичный", response.body
     assert_match "Личный", response.body
+    assert_match(/quality-toggle__input/, response.body)
+    assert_match "High", response.body
+    assert_match "Medium", response.body
+    assert_match "Low", response.body
   end
 
   test "private post is visible only to author" do

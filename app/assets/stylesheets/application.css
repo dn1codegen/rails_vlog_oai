@@ -822,6 +822,50 @@ main.container {
   outline-offset: 2px;
 }
 
+.quality-toggle {
+  display: inline-flex;
+  border: 1px solid #d4d4d4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.quality-toggle__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.field .quality-toggle__option {
+  margin: 0;
+  min-width: 88px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-right: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
+  background: #fff;
+  cursor: pointer;
+}
+
+.quality-toggle__option:last-of-type {
+  border-right: 0;
+}
+
+.quality-toggle__input:checked + .quality-toggle__option {
+  background: #111827;
+  color: #fff;
+}
+
+.quality-toggle__input:focus-visible + .quality-toggle__option {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
 .youtube-import-row {
   display: flex;
   gap: 8px;

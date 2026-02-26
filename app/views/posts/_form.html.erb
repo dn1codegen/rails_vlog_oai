@@ -81,9 +81,18 @@
       </div>
 
       <%= form.label :youtube_quality, "Качество видео (yt-dlp)" %>
-      <%= form.select :youtube_quality,
-                      [ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ],
-                      { selected: post.youtube_quality.presence || "medium" } %>
+      <% selected_quality = post.youtube_quality.presence || "medium" %>
+      <div class="quality-toggle" role="radiogroup" aria-label="Качество видео">
+        <% [ [ "High", "high" ], [ "Medium", "medium" ], [ "Low", "low" ] ].each do |quality_label, quality_value| %>
+          <% input_id = "post_youtube_quality_#{quality_value}" %>
+          <%= form.radio_button :youtube_quality,
+                                quality_value,
+                                id: input_id,
+                                checked: selected_quality == quality_value,
+                                class: "quality-toggle__input" %>
+          <%= label_tag input_id, quality_label, class: "quality-toggle__option" %>
+        <% end %>
+      </div>
       <p class="youtube-import-status" data-youtube-import-target="status"></p>
       <div class="youtube-import-progress" data-youtube-import-target="progress" hidden>
         <div class="youtube-import-progress-track"
