@@ -13,7 +13,10 @@ Rails.application.routes.draw do
 
   resource :registration, only: %i[new create]
   resource :session, only: %i[new create destroy]
-  resource :profile, only: %i[show edit update]
+  resource :profile, only: %i[show edit update] do
+    get :export_videos
+    post :import_videos
+  end
   patch "profile/posts/:id/visibility", to: "profiles#update_post_visibility", as: :profile_post_visibility
 
   resources :posts, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do

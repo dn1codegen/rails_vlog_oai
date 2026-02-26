@@ -43,6 +43,34 @@ class ProfilesController < ApplicationController
     end
   end
 
+  def export_videos
+    result = ProfileVideoArchiveExporter.call(user: current_user)
+    if result.status != :ok
+      redirect_to profile_path, alert: result.message.presence || "Не удалось сформировать архив видео."
+      return
+    end
+
+    send_data result.data,
+              type: result.content_type,
+              filename: result.filename,
+              disposition: :attachment
+  end
+
+  def import_videos
+    result = ProfileVideoArchiveImporter.call(user: current_user, archive: params[:archive])
+    if result.status != :ok
+      redirect_to profile_path, alert: result.message.presence || "Не удалось импортировать архив."
+      return
+    end
+
+    if result.failed_count.positive?
+      preview_errors = result.errors.first(3).join(" | ")
+      redirect_to profile_path, alert: "Импортировано: #{result.imported_count}. Ошибок: #{result.failed_count}. #{preview_errors}"
+    else
+      redirect_to profile_path, notice: "Импортировано видео: #{result.imported_count}."
+    end
+  end
+
   private
 
   def profile_params

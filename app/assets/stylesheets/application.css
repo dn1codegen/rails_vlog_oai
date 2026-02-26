@@ -1470,6 +1470,36 @@ main.container {
   gap: 10px;
 }
 
+.profile-archive-panel__hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.profile-archive-panel__actions {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.profile-import-form {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-muted);
+  display: grid;
+  gap: 8px;
+}
+
+.profile-import-form label {
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.profile-import-form input[type="file"] {
+  max-width: 100%;
+}
+
 .profile-post {
   border: 1px solid var(--line);
   border-radius: 12px;

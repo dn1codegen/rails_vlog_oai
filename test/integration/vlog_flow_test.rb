@@ -1,4 +1,5 @@
 require "test_helper"
+require "zip"
 
 class VlogFlowTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
@@ -292,6 +293,12 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
     patch profile_post_visibility_path(post_record), params: { visibility: "private_post" }
     assert_redirected_to new_session_path
+
+    get export_videos_profile_path
+    assert_redirected_to new_session_path
+
+    post import_videos_profile_path
+    assert_redirected_to new_session_path
   end
 
   test "user can open and update profile" do
@@ -320,6 +327,86 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     user.reload
     assert_equal "Автор канала", user.name
     assert_equal "Пишу про Ruby и видео.", user.bio
+  end
+
+  test "user can export own videos to zip with json manifest" do
+    user = create_user(email: "profile-export@example.com")
+    first_post = create_post_record(title: "Экспортируемое видео 1", user:, tags: "rails", visibility: "private_post")
+    second_post = create_post_record(title: "Экспортируемое видео 2", user:, tags: "api", visibility: "public_post")
+    sign_in_as(user)
+
+    get export_videos_profile_path
+
+    assert_response :success
+    assert_equal "application/zip", response.media_type
+    assert_match "attachment", response.headers["Content-Disposition"]
+
+    Zip::File.open_buffer(response.body) do |zip_file|
+      manifest_entry = zip_file.find_entry("posts.json")
+      assert manifest_entry
+
+      manifest = JSON.parse(manifest_entry.get_input_stream.read)
+      assert_equal "vlog_posts_archive", manifest["format"]
+      assert_equal 1, manifest["version"]
+      assert_equal 2, manifest["posts"].size
+      assert_equal user.email, manifest.dig("user", "email")
+
+      exported_titles = manifest["posts"].map { |payload| payload["title"] }
+      assert_includes exported_titles, first_post.title
+      assert_includes exported_titles, second_post.title
+
+      manifest["posts"].each do |payload|
+        assert payload["video_path"].present?
+        assert zip_file.find_entry(payload["video_path"])
+      end
+    end
+  end
+
+  test "user can import videos from exported archive" do
+    owner = create_user(email: "profile-export-owner@example.com")
+    create_post_record(title: "Архивный ролик 1", user: owner, tags: "rails", visibility: "private_post")
+    create_post_record(title: "Архивный ролик 2", user: owner, tags: "backend", visibility: "public_post")
+
+    sign_in_as(owner)
+    get export_videos_profile_path
+    assert_response :success
+    archive_payload = response.body
+
+    delete session_path
+    assert_redirected_to root_path
+
+    importer = create_user(email: "profile-importer@example.com")
+    sign_in_as(importer)
+
+    archive_file = Tempfile.new([ "profile-import-", ".zip" ])
+    archive_file.binmode
+    archive_file.write(archive_payload)
+    archive_file.rewind
+
+    upload = Rack::Test::UploadedFile.new(
+      archive_file.path,
+      "application/zip",
+      original_filename: "videos-archive.zip"
+    )
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
+      assert_difference("Post.count", 2) do
+        post import_videos_profile_path, params: { archive: upload }
+      end
+    end
+
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_match "Импортировано видео: 2", response.body
+
+    imported_posts = importer.posts.order(:id)
+    assert_equal 2, imported_posts.count
+    assert_equal [ "Архивный ролик 1", "Архивный ролик 2" ], imported_posts.pluck(:title)
+    assert imported_posts.all? { |post| post.video.attached? }
+    assert_equal %w[private_post public_post].sort, imported_posts.map(&:visibility).sort
+  ensure
+    archive_file&.close
+    archive_file&.unlink
   end
 
   test "user can toggle post visibility from profile list" do

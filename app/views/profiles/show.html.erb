@@ -29,6 +29,23 @@
   </div>
 </section>
 
+<section class="panel profile-archive-panel">
+  <h2>Экспорт и импорт архива</h2>
+  <p class="profile-archive-panel__hint">
+    Скачайте ZIP-архив со своими видео и файлом <code>posts.json</code>, либо загрузите архив такого же формата.
+  </p>
+
+  <div class="profile-archive-panel__actions">
+    <%= link_to "Скачать архив моих видео", export_videos_profile_path, class: "button" %>
+
+    <%= form_with url: import_videos_profile_path, method: :post, html: { multipart: true }, class: "profile-import-form" do %>
+      <label for="archive_file">Импорт из ZIP-архива</label>
+      <%= file_field_tag :archive, id: "archive_file", accept: ".zip,application/zip", required: true %>
+      <%= submit_tag "Импортировать архив", class: "button button--secondary" %>
+    <% end %>
+  </div>
+</section>
+
 <section class="panel">
   <h2>Мои последние видео</h2>
 
