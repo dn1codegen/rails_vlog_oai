@@ -29,7 +29,7 @@
         <h2><%= link_to post.title, post_path(post), class: "post-card__title-link", title: post.title %></h2>
 
         <p class="post-meta">
-          Автор: <%= post.user&.email || "удаленный пользователь" %> •
+          Автор: <%= post.user&.display_name || "удаленный пользователь" %> •
           Опубликовано <%= l(post.created_at, format: :short) %>
         </p>
         <p class="post-meta">

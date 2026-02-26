@@ -43,6 +43,7 @@
           <% end %>
           <div class="top-menu__right">
             <% if user_signed_in? %>
+              <%= link_to "ПРОФИЛЬ", profile_path, class: "top-menu__link" %>
               <%= link_to "СОЗДАТЬ ПОСТ", new_post_path, class: "top-menu__link" %>
               <%= button_to "ВЫЙТИ", session_path, method: :delete, class: "top-menu__button", form: { class: "inline-form" } %>
             <% else %>

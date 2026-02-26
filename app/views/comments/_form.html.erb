@@ -1,6 +1,6 @@
 <%= form_with model: [post, comment] do |form| %>
   <% if user_signed_in? %>
-    <p class="post-meta">Комментарий будет опубликован от: <strong><%= current_user.email %></strong></p>
+    <p class="post-meta">Комментарий будет опубликован от: <strong><%= current_user.display_name %></strong></p>
   <% end %>
 
   <div class="field">

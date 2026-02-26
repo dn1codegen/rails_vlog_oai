@@ -1,0 +1,33 @@
+<section class="page-head">
+  <h1>Редактирование профиля</h1>
+  <%= link_to "Назад в профиль", profile_path, class: "button button--secondary" %>
+</section>
+
+<section class="panel">
+  <%= form_with model: @user, url: profile_path, method: :patch do |form| %>
+    <% if @user.errors.any? %>
+      <section class="error-box">
+        <h3>Профиль не сохранен</h3>
+        <ul>
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <div class="field">
+      <%= form.label :name, "Имя" %>
+      <%= form.text_field :name, maxlength: User::NAME_MAX_LENGTH, placeholder: "Например, Alex Dev" %>
+      <small>Максимум <%= User::NAME_MAX_LENGTH %> символов.</small>
+    </div>
+
+    <div class="field">
+      <%= form.label :bio, "О себе" %>
+      <%= form.text_area :bio, rows: 6, maxlength: User::BIO_MAX_LENGTH, placeholder: "Коротко расскажите о себе" %>
+      <small>Максимум <%= User::BIO_MAX_LENGTH %> символов.</small>
+    </div>
+
+    <%= form.submit "Сохранить профиль", class: "button" %>
+  <% end %>
+</section>

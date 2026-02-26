@@ -1,0 +1,67 @@
+<section class="page-head">
+  <h1>Профиль</h1>
+  <%= link_to "Редактировать профиль", edit_profile_path, class: "button button--secondary" %>
+</section>
+
+<section class="panel profile-card">
+  <h2 class="profile-card__title"><%= @user.display_name %></h2>
+  <p class="post-meta">Email: <%= @user.email %></p>
+
+  <% if @user.bio.present? %>
+    <div class="profile-bio"><%= simple_format(@user.bio) %></div>
+  <% else %>
+    <p class="empty">Расскажите о себе в разделе редактирования профиля.</p>
+  <% end %>
+
+  <div class="profile-stats">
+    <article class="profile-stat">
+      <strong><%= @user.posts.count %></strong>
+      <span>Постов</span>
+    </article>
+    <article class="profile-stat">
+      <strong><%= @user.comments.count %></strong>
+      <span>Комментариев</span>
+    </article>
+    <article class="profile-stat">
+      <strong><%= @user.post_reactions.count %></strong>
+      <span>Реакций</span>
+    </article>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Мои последние видео</h2>
+
+  <% if @recent_posts.any? %>
+    <div class="profile-posts">
+      <% @recent_posts.each do |post| %>
+        <% visibility_label = post.visibility_private_post? ? "Личный" : "Публичный" %>
+        <% toggle_visibility = post.visibility_private_post? ? "public_post" : "private_post" %>
+        <% toggle_action_label = post.visibility_private_post? ? "Сделать пост публичным" : "Сделать пост личным" %>
+        <article class="profile-post">
+          <div class="profile-post__head">
+            <h3><%= link_to post.title, post_path(post) %></h3>
+            <%= form_with url: profile_post_visibility_path(post), method: :patch, class: "profile-visibility-form" do %>
+              <%= hidden_field_tag :visibility, toggle_visibility %>
+              <button type="submit"
+                      class="profile-visibility-switch <%= "is-private" if post.visibility_private_post? %>"
+                      aria-label="<%= toggle_action_label %>">
+                <span class="profile-visibility-switch__text"><%= visibility_label %></span>
+                <span class="profile-visibility-switch__track" aria-hidden="true">
+                  <span class="profile-visibility-switch__thumb"></span>
+                </span>
+              </button>
+            <% end %>
+          </div>
+          <p class="profile-post__meta">
+            <%= l(post.created_at, format: :short) %> •
+            Комментариев: <%= post.comments.size %> •
+            <%= post.visibility_private_post? ? "Личный пост" : "Публичный пост" %>
+          </p>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="empty">Вы пока не опубликовали ни одного видео.</p>
+  <% end %>
+</section>

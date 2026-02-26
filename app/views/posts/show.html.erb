@@ -82,7 +82,7 @@
       </div>
 
       <p class="post-meta">
-        Автор: <%= @post.user&.email || "удаленный пользователь" %> •
+        Автор: <%= @post.user&.display_name || "удаленный пользователь" %> •
         Опубликовано <%= l(@post.created_at, format: :long) %>
       </p>
       <% if current_user == @post.user %>
@@ -127,7 +127,7 @@
           <article class="comment">
             <div class="comment-header">
               <p class="comment-meta">
-                <strong><%= comment.user&.email || comment.author_name %></strong> •
+                <strong><%= comment.user&.display_name || comment.author_name %></strong> •
                 <%= l(comment.created_at, format: :short) %>
               </p>
               <% if current_user == comment.user %>

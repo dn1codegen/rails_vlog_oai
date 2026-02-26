@@ -13,6 +13,8 @@ Rails.application.routes.draw do
 
   resource :registration, only: %i[new create]
   resource :session, only: %i[new create destroy]
+  resource :profile, only: %i[show edit update]
+  patch "profile/posts/:id/visibility", to: "profiles#update_post_visibility", as: :profile_post_visibility
 
   resources :posts, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     get :youtube_options, on: :collection

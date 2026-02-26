@@ -5,6 +5,8 @@ require "securerandom"
 class User < ApplicationRecord
   PASSWORD_ITERATIONS = 210_000
   PASSWORD_DIGEST_BYTES = 32
+  NAME_MAX_LENGTH = 60
+  BIO_MAX_LENGTH = 500
 
   has_many :posts, dependent: :nullify
   has_many :comments, dependent: :destroy
@@ -13,15 +15,22 @@ class User < ApplicationRecord
   attr_accessor :password, :password_confirmation
 
   before_validation :normalize_email
+  before_validation :normalize_profile_fields
   before_save :persist_password_digest, if: :password_present?
 
   validates :email, presence: true, uniqueness: { case_sensitive: false }, length: { maximum: 255 }
   validates :password, presence: true, confirmation: true, length: { minimum: 8 }, if: :password_required?
+  validates :name, length: { maximum: NAME_MAX_LENGTH }
+  validates :bio, length: { maximum: BIO_MAX_LENGTH }
 
   def authenticate(raw_password)
     return false unless password_digest.present?
 
     self.class.valid_password?(password_digest, raw_password.to_s) ? self : false
+  end
+
+  def display_name
+    name.presence || email
   end
 
   def self.valid_password?(stored_digest, raw_password)
@@ -56,6 +65,11 @@ class User < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.strip.downcase
+  end
+
+  def normalize_profile_fields
+    self.name = name.to_s.squish.presence
+    self.bio = bio.to_s.strip.presence
   end
 
   def persist_password_digest

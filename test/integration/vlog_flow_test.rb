@@ -275,6 +275,78 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  test "guest cannot open or update profile" do
+    post_record = create_post_record
+
+    get profile_path
+    assert_redirected_to new_session_path
+
+    patch profile_path, params: { user: { name: "Новый ник" } }
+    assert_redirected_to new_session_path
+
+    patch profile_post_visibility_path(post_record), params: { visibility: "private_post" }
+    assert_redirected_to new_session_path
+  end
+
+  test "user can open and update profile" do
+    user = create_user(email: "profile-owner@example.com")
+    create_post_record(title: "Публичный профильный пост", user:, visibility: "public_post")
+    create_post_record(title: "Личный профильный пост", user:, visibility: "private_post")
+    sign_in_as(user)
+
+    get profile_path
+    assert_response :success
+    assert_match "profile-owner@example.com", response.body
+    assert_match "Публичный пост", response.body
+    assert_match "Личный пост", response.body
+
+    patch profile_path, params: {
+      user: {
+        name: "Автор канала",
+        bio: "Пишу про Ruby и видео."
+      }
+    }
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_response :success
+    assert_match "Профиль обновлен", response.body
+    assert_match "Автор канала", response.body
+    assert_match "Пишу про Ruby и видео.", response.body
+
+    user.reload
+    assert_equal "Автор канала", user.name
+    assert_equal "Пишу про Ruby и видео.", user.bio
+  end
+
+  test "user can toggle post visibility from profile list" do
+    user = create_user(email: "visibility-owner@example.com")
+    post_record = create_post_record(title: "Пост для переключения", user:, visibility: "public_post")
+    sign_in_as(user)
+
+    patch profile_post_visibility_path(post_record), params: { visibility: "private_post" }
+    assert_redirected_to profile_path
+    post_record.reload
+    assert post_record.visibility_private_post?
+
+    patch profile_post_visibility_path(post_record), params: { visibility: "public_post" }
+    assert_redirected_to profile_path
+    post_record.reload
+    assert post_record.visibility_public_post?
+  end
+
+  test "user cannot toggle visibility of another user's post from profile list" do
+    owner = create_user(email: "visibility-owner-two@example.com")
+    intruder = create_user(email: "visibility-intruder@example.com")
+    post_record = create_post_record(title: "Чужой видимый пост", user: owner, visibility: "public_post")
+    sign_in_as(intruder)
+
+    patch profile_post_visibility_path(post_record), params: { visibility: "private_post" }
+    assert_redirected_to profile_path
+    follow_redirect!
+    assert_match "только своих постов", response.body
+    assert post_record.reload.visibility_public_post?
+  end
+
   test "guest cannot set post reaction" do
     post_record = create_post_record
 
