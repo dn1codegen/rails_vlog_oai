@@ -42,12 +42,8 @@ class PostsController < ApplicationController
   end
 
   def create
-    attributes = post_params
-    @post = current_user.posts.build(attributes.except(:youtube_url, :youtube_quality))
-    @post.youtube_url = attributes[:youtube_url].to_s.strip
-    @post.youtube_quality = attributes[:youtube_quality].to_s.strip
-
-    unless attach_video_from_youtube_if_needed(@post)
+    @post = build_post_for_create
+    unless process_youtube_import(@post)
       render :new, status: :unprocessable_entity
       return
     end
@@ -99,7 +95,19 @@ class PostsController < ApplicationController
     params.require(:post).permit(:title, :description, :tags, :visibility, :video, :youtube_url, :youtube_quality)
   end
 
-  def attach_video_from_youtube_if_needed(post)
+  def build_post_for_create
+    attributes = post_params
+    post = current_user.posts.build(attributes.except(:youtube_url, :youtube_quality))
+    assign_youtube_attributes(post, attributes)
+    post
+  end
+
+  def assign_youtube_attributes(post, attributes)
+    post.youtube_url = attributes[:youtube_url].to_s.strip
+    post.youtube_quality = attributes[:youtube_quality].to_s.strip
+  end
+
+  def process_youtube_import(post)
     return true if post.video.attached?
     return true if post.youtube_url.blank?
 
@@ -113,9 +121,13 @@ class PostsController < ApplicationController
       return false
     end
 
+    apply_youtube_metadata(post, result)
+    true
+  end
+
+  def apply_youtube_metadata(post, result)
     post.title = result.title.to_s.strip[0, 120] if post.title.blank? && result.title.present?
     post.description = result.description.to_s.strip[0, 5000] if post.description.blank? && result.description.present?
-    true
   end
 
   def authorize_post_owner!
