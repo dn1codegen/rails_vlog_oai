@@ -141,7 +141,9 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "Скачать и опубликовать", response.body
     assert_match(/data-youtube-import-target=\"progress\"/, response.body)
     assert_match "Кто может видеть пост", response.body
-    assert_match "Только я (приватный пост)", response.body
+    assert_match(/visibility-switch__input/, response.body)
+    assert_match "Публичный", response.body
+    assert_match "Личный", response.body
   end
 
   test "private post is visible only to author" do
@@ -297,8 +299,6 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     get profile_path
     assert_response :success
     assert_match "profile-owner@example.com", response.body
-    assert_match "Публичный пост", response.body
-    assert_match "Личный пост", response.body
 
     patch profile_path, params: {
       user: {

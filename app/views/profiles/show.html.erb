@@ -55,8 +55,7 @@
           </div>
           <p class="profile-post__meta">
             <%= l(post.created_at, format: :short) %> •
-            Комментариев: <%= post.comments.size %> •
-            <%= post.visibility_private_post? ? "Личный пост" : "Публичный пост" %>
+            Комментариев: <%= post.comments.size %>
           </p>
         </article>
       <% end %>

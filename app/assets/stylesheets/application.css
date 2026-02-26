@@ -155,6 +155,112 @@ main.container {
   color: var(--text);
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-menu__summary {
+  list-style: none;
+  border: 1px solid #d6d6d6;
+  background: var(--surface);
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-menu__summary::marker {
+  content: "";
+}
+
+.account-menu__summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-menu__summary::after {
+  content: none;
+}
+
+.account-menu__icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  color: #111827;
+}
+
+.account-menu__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.account-menu__summary:hover {
+  background: var(--surface-muted);
+  border-color: #c2c2c2;
+}
+
+.account-menu[open] .account-menu__summary {
+  background: var(--surface-muted);
+  border-color: #c2c2c2;
+}
+
+.account-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px rgba(15, 15, 15, 0.12);
+  overflow: hidden;
+  z-index: 40;
+}
+
+.account-menu__item {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+
+.account-menu__item:last-child {
+  border-bottom: 0;
+}
+
+.account-menu__item:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.account-menu__form {
+  margin: 0;
+}
+
+.account-menu__item--button {
+  border-radius: 0;
+}
+
+.account-menu__summary:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
 .top-menu__search {
   width: 100%;
   display: flex;
@@ -636,6 +742,86 @@ main.container {
   font-size: 0.82rem;
 }
 
+.field label.visibility-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.visibility-switch__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.visibility-switch__track {
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #22c55e;
+  border: 1px solid #16a34a;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.visibility-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: translateX(18px);
+  transition: transform 0.2s ease;
+}
+
+.visibility-switch__labels {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.visibility-switch__public {
+  color: #166534;
+}
+
+.visibility-switch__private {
+  color: #94a3b8;
+}
+
+.visibility-switch__input:checked + .visibility-switch__track {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+.visibility-switch__input:checked + .visibility-switch__track .visibility-switch__thumb {
+  transform: translateX(0);
+}
+
+.visibility-switch__input:checked ~ .visibility-switch__labels .visibility-switch__public {
+  color: #94a3b8;
+}
+
+.visibility-switch__input:checked ~ .visibility-switch__labels .visibility-switch__private {
+  color: #dc2626;
+}
+
+.visibility-switch__input:focus-visible + .visibility-switch__track {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
 .youtube-import-row {
   display: flex;
   gap: 8px;
@@ -800,6 +986,16 @@ main.container {
     padding: 7px 10px;
   }
 
+  .account-menu__summary {
+    width: 36px;
+    height: 36px;
+  }
+
+  .account-menu__icon {
+    width: 16px;
+    height: 16px;
+  }
+
   .top-menu__search-input,
   .top-menu__search-button {
     height: 38px;
@@ -856,6 +1052,16 @@ main.container {
   .top-menu__button {
     font-size: 0.72rem;
     padding: 6px 8px;
+  }
+
+  .account-menu__summary {
+    width: 34px;
+    height: 34px;
+  }
+
+  .account-menu__icon {
+    width: 15px;
+    height: 15px;
   }
 }
 

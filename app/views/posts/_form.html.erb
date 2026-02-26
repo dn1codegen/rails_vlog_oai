@@ -40,9 +40,20 @@
 
   <div class="field">
     <%= form.label :visibility, "Кто может видеть пост" %>
-    <%= form.select :visibility,
-                    [ [ "Все пользователи", "public_post" ], [ "Только я (приватный пост)", "private_post" ] ] %>
-    <small>Приватный пост виден только вам и скрыт для остальных пользователей.</small>
+    <label class="visibility-switch">
+      <%= form.check_box :visibility,
+                         { class: "visibility-switch__input" },
+                         "private_post",
+                         "public_post" %>
+      <span class="visibility-switch__track" aria-hidden="true">
+        <span class="visibility-switch__thumb"></span>
+      </span>
+      <span class="visibility-switch__labels">
+        <span class="visibility-switch__public">Публичный</span>
+        <span class="visibility-switch__private">Личный</span>
+      </span>
+    </label>
+    <small>Личный пост виден только вам и скрыт для остальных пользователей.</small>
   </div>
 
   <% if post.new_record? %>
