@@ -27,6 +27,29 @@ class PostTest < ActiveSupport::TestCase
     end
   end
 
+  test "allows updating cover image without revalidating unchanged video codec" do
+    post = Post.new(user: @user, title: "Legacy video")
+    attach_sample_video(post)
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "av1")) do
+      assert post.save
+    end
+
+    cover_payload = File.binread(@cover_path)
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "mpeg2video")) do
+      post.title = "Legacy video with cover"
+      post.cover_image.attach(
+        io: StringIO.new(cover_payload),
+        filename: "cover.png",
+        content_type: "image/png"
+      )
+      assert post.save
+    end
+
+    assert post.reload.cover_image.attached?
+  end
+
   test "invalid with unsupported container type" do
     post = Post.new(user: @user, title: "Legacy video")
     attach_sample_video(post, filename: "legacy.avi", content_type: "video/x-msvideo")
@@ -109,9 +132,8 @@ class PostTest < ActiveSupport::TestCase
   private
 
   def attach_sample_video(post, filename: "sample.mp4", content_type: "video/mp4")
-    File.open(@video_path) do |file|
-      post.video.attach(io: file, filename:, content_type:)
-    end
+    payload = File.binread(@video_path)
+    post.video.attach(io: StringIO.new(payload), filename:, content_type:)
   end
 
   def with_forced_result(result)

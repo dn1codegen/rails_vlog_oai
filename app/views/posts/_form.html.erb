@@ -142,7 +142,7 @@
   <div class="field">
     <%= form.label :cover_image, "Обложка для списка" %>
     <%= form.file_field :cover_image,
-                        accept: ".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" %>
+                        accept: "image/*,.png,.jpg,.jpeg,.webp,.heic,.heif,image/png,image/jpeg,image/webp,image/heic,image/heif" %>
     <small>Необязательно. Если загрузить, эта картинка будет показана в списке постов и похожих видео.</small>
     <% if post.cover_image.attached? %>
       <small>Текущая обложка сохранена. Выберите файл, чтобы заменить её.</small>

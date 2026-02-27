@@ -45,7 +45,7 @@
         <div class="post-header-main">
           <h1 class="post-page-title"><%= @post.title %></h1>
           <p class="post-meta">
-            Автор: <%= @post.user&.display_name || "удаленный пользователь" %> •
+            <%= @post.user&.display_name || "удаленный пользователь" %> •
             Опубликовано <%= l(@post.created_at, format: :long) %>
           </p>
         </div>

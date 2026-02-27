@@ -43,8 +43,8 @@ class Post < ApplicationRecord
   before_validation :assign_title_from_video, on: :create
   before_validation :normalize_tags
   validate :video_presence
-  validate :video_content_type_supported
-  validate :video_codec_supported, unless: :skip_video_codec_validation
+  validate :video_content_type_supported, if: :video_requires_validation?
+  validate :video_codec_supported, if: :video_codec_validation_required?
   after_commit :request_thumbnail_generation, on: :create
   scope :visible_to, ->(user) do
     if user.present?
@@ -222,6 +222,18 @@ class Post < ApplicationRecord
   def sync_thumbnail_generation?
     default = Rails.env.development? ? "true" : "false"
     ActiveModel::Type::Boolean.new.cast(ENV.fetch("THUMBNAIL_SYNC", default))
+  end
+
+  def video_requires_validation?
+    return false unless video.attached?
+
+    new_record? || attachment_changes.key?("video")
+  end
+
+  def video_codec_validation_required?
+    return false if skip_video_codec_validation
+
+    video_requires_validation?
   end
 
   def media_content_type
