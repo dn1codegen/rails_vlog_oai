@@ -6,9 +6,21 @@ class PostsController < ApplicationController
 
   def index
     @query = params[:q].to_s.strip
+    @selected_tag = normalize_selected_tag(params[:tag])
     @posts = Post.visible_to(current_user)
-                 .includes(:user, :comments, video_attachment: :blob, thumbnail_attachment: :blob)
+                 .includes(:user, :comments, video_attachment: :blob, thumbnail_attachment: :blob, cover_image_attachment: :blob)
                  .order(created_at: :desc)
+
+    if @selected_tag.present?
+      @posts = @posts.where(
+        "posts.tags = :tag OR posts.tags LIKE :prefix OR posts.tags LIKE :middle OR posts.tags LIKE :suffix",
+        tag: @selected_tag,
+        prefix: "#{@selected_tag}, %",
+        middle: "%, #{@selected_tag}, %",
+        suffix: "%, #{@selected_tag}"
+      )
+    end
+
     if @query.present?
       normalized_query = "%#{ActiveRecord::Base.sanitize_sql_like(@query.downcase)}%"
       @posts = @posts.where(
@@ -92,7 +104,7 @@ class PostsController < ApplicationController
   end
 
   def post_params
-    params.require(:post).permit(:title, :description, :tags, :visibility, :video, :youtube_url, :youtube_quality)
+    params.require(:post).permit(:title, :description, :visibility, :video, :cover_image, :youtube_url, :youtube_quality, selected_tags: [])
   end
 
   def build_post_for_create
@@ -145,7 +157,7 @@ class PostsController < ApplicationController
   def load_related_posts(post, limit: 10)
     base_scope = Post.visible_to(current_user)
                      .where.not(id: post.id)
-                     .includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob)
+                     .includes(:comments, video_attachment: :blob, thumbnail_attachment: :blob, cover_image_attachment: :blob)
 
     keyword_matches = []
     keywords = related_keywords(post)
@@ -198,5 +210,12 @@ class PostsController < ApplicationController
                                     .uniq
                                     .reject { |word| word.length < 3 || stopwords.include?(word) }
                                     .first(6)
+  end
+
+  def normalize_selected_tag(raw_tag)
+    tag = raw_tag.to_s.strip
+    return if tag.blank?
+
+    Post::ALLOWED_TAGS.find { |allowed_tag| allowed_tag.casecmp?(tag) }
   end
 end

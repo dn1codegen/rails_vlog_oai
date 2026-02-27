@@ -1,0 +1,21 @@
+<% if total_pages > 1 %>
+  <nav class="<%= [ "profile-pagination", local_assigns[:extra_class] ].compact.join(" ") %>" aria-label="Пагинация постов">
+    <% if current_page > 1 %>
+      <%= link_to "Назад", profile_path(page: current_page - 1), class: "button button--secondary button--small" %>
+    <% end %>
+    <div class="profile-pagination__pages" aria-label="Номера страниц">
+      <% 1.upto(total_pages) do |page_number| %>
+        <% if page_number == current_page %>
+          <span class="profile-pagination__page profile-pagination__page--current" aria-current="page"><%= page_number %></span>
+        <% else %>
+          <% page_path = page_number == 1 ? profile_path : profile_path(page: page_number) %>
+          <%= link_to page_number, page_path, class: "profile-pagination__page profile-pagination__page--link" %>
+        <% end %>
+      <% end %>
+    </div>
+    <span class="profile-pagination__info">Страница <%= current_page %> из <%= total_pages %></span>
+    <% if current_page < total_pages %>
+      <%= link_to "Вперед", profile_path(page: current_page + 1), class: "button button--secondary button--small" %>
+    <% end %>
+  </nav>
+<% end %>

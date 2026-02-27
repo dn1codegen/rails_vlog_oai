@@ -3,6 +3,7 @@ require "test_helper"
 class PostTest < ActiveSupport::TestCase
   setup do
     @video_path = Rails.root.join("test/fixtures/files/sample.mp4")
+    @cover_path = Rails.root.join("test/fixtures/files/cover.png")
     @user = User.create!(email: "post-model-#{SecureRandom.hex(4)}@example.com", password: "Password123", password_confirmation: "Password123")
   end
 
@@ -48,11 +49,11 @@ class PostTest < ActiveSupport::TestCase
     end
   end
 
-  test "normalizes tags and removes duplicates" do
+  test "normalizes tags to allowed values and removes duplicates" do
     post = Post.new(
       user: @user,
       title: "Tagged post",
-      tags: "  #Rails, API Design, rails,  qa & testing  "
+      tags: "  #film, MUSIC, audio-book, unknown, music  "
     )
     attach_sample_video(post)
 
@@ -61,24 +62,38 @@ class PostTest < ActiveSupport::TestCase
       assert post.valid?
     end
 
-    assert_equal "rails, api-design, qa-testing", post.tags
-    assert_equal %w[rails api-design qa-testing], post.tag_list
+    assert_equal "Film, Music, AudioBook", post.tags
+    assert_equal %w[Film Music AudioBook], post.tag_list
   end
 
-  test "invalid when too many tags are provided" do
-    post = Post.new(
-      user: @user,
-      title: "Too many tags",
-      tags: (1..11).map { |index| "tag#{index}" }.join(", ")
-    )
+  test "accepts selected_tags array from form params" do
+    post = Post.new(user: @user, title: "Selected tags")
+    post.selected_tags = [ "Podcast", "Info", "podcast", "legacy-tag" ]
     attach_sample_video(post)
 
     result = VideoCodecInspector::Result.new(status: :ok, codec: "av1")
     with_forced_result(result) do
-      assert_not post.valid?
+      assert post.valid?
     end
 
-    assert_includes post.errors[:tags].join(" "), "не более 10"
+    assert_equal "Podcast, Info", post.tags
+    assert_equal %w[Podcast Info], post.tag_list
+  end
+
+  test "list preview image prefers cover image and falls back to thumbnail" do
+    post = Post.new(user: @user, title: "Preview priority")
+    attach_sample_video(post)
+
+    assert_nil post.list_preview_image
+
+    post.thumbnail.attach(io: StringIO.new("thumb"), filename: "thumb.jpg", content_type: "image/jpeg")
+    assert_equal post.thumbnail, post.list_preview_image
+
+    File.open(@cover_path) do |file|
+      post.cover_image.attach(io: file, filename: "cover.png", content_type: "image/png")
+    end
+
+    assert_equal post.cover_image, post.list_preview_image
   end
 
   private

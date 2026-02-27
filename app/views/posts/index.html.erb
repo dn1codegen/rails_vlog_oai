@@ -1,7 +1,19 @@
-<section class="page-head">
-  <h1>Лента видео</h1>
+<section class="page-head page-head--filters">
+  <nav class="topic-filters" aria-label="Фильтр по тематике">
+    <%= link_to "Все",
+                root_path(q: @query.presence),
+                class: [ "post-tag", "post-tag--filter", ("post-tag--active" if @selected_tag.blank?) ] %>
+    <% Post::ALLOWED_TAGS.each do |tag| %>
+      <%= link_to tag,
+                  root_path(q: @query.presence, tag:),
+                  class: [ "post-tag", "post-tag--filter", ("post-tag--active" if @selected_tag == tag) ] %>
+    <% end %>
+  </nav>
+
   <% if @query.present? %>
-    <p class="search-summary">Результаты поиска: <strong><%= @query %></strong></p>
+    <p class="search-summary search-summary--right">
+      Результаты поиска: <strong><%= @query %></strong>
+    </p>
   <% end %>
 </section>
 
@@ -12,8 +24,8 @@
         <% if post.video.attached? %>
           <div class="post-card-media">
             <%= link_to post_path(post), class: "preview-link" do %>
-              <% if post.thumbnail.attached? %>
-                <%= image_tag post.thumbnail,
+              <% if post.list_preview_image.present? %>
+                <%= image_tag post.list_preview_image,
                               class: "video video-preview",
                               alt: "Превью для #{post.title}",
                               loading: "lazy" %>
@@ -38,7 +50,7 @@
 
         <div class="post-tags">
           <% post.tag_list.each do |tag| %>
-            <%= link_to "##{tag}", root_path(q: tag), class: "post-tag" %>
+            <%= link_to "##{tag}", root_path(tag:), class: "post-tag" %>
           <% end %>
         </div>
       </article>

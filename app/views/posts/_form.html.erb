@@ -31,11 +31,16 @@
   </div>
 
   <div class="field">
-    <%= form.label :tags, "Теги" %>
-    <%= form.text_field :tags,
-                        placeholder: "например: rails, backend, tutorial",
-                        maxlength: 500 %>
-    <small>Разделяйте теги запятыми. До 10 тегов, каждый до 30 символов.</small>
+    <%= form.label :selected_tags, "Теги" %>
+    <div class="tag-picker">
+      <%= form.collection_check_boxes :selected_tags, Post::ALLOWED_TAGS, :to_s, :to_s do |builder| %>
+        <%= builder.label(class: "tag-picker__option") do %>
+          <%= builder.check_box(class: "tag-picker__input") %>
+          <span class="tag-picker__text"><%= builder.text %></span>
+        <% end %>
+      <% end %>
+    </div>
+    <small>Выберите один или несколько тегов из списка.</small>
   </div>
 
   <div class="field">
@@ -131,6 +136,16 @@
     </small>
     <% if post.video.attached? %>
       <small>Текущее видео сохранено. Выберите файл только если хотите заменить его.</small>
+    <% end %>
+  </div>
+
+  <div class="field">
+    <%= form.label :cover_image, "Обложка для списка" %>
+    <%= form.file_field :cover_image,
+                        accept: ".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" %>
+    <small>Необязательно. Если загрузить, эта картинка будет показана в списке постов и похожих видео.</small>
+    <% if post.cover_image.attached? %>
+      <small>Текущая обложка сохранена. Выберите файл, чтобы заменить её.</small>
     <% end %>
   </div>
 

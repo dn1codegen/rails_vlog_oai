@@ -95,7 +95,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
             post: {
               title: "",
               description: "",
-              tags: "rails, youtube",
+              selected_tags: [ "Stream", "Podcast" ],
               youtube_url: "https://www.youtube.com/watch?v=abc123",
               youtube_quality: "medium"
             }
@@ -149,6 +149,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "High", response.body
     assert_match "Medium", response.body
     assert_match "Low", response.body
+    assert_match "Обложка для списка", response.body
+    assert_match(/post\[cover_image\]/, response.body)
   end
 
   test "private post is visible only to author" do
@@ -356,8 +358,10 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     get profile_path
     assert_response :success
     assert_match "Мои видео (12)", response.body
-    assert_match "Страница 1 из 2", response.body
+    assert_equal 2, response.body.scan("Страница 1 из 2").size
     assert_match profile_path(page: 2), response.body
+    assert_match(/profile-pagination__page--current\" aria-current=\"page\">1</, response.body)
+    assert_match(/profile-pagination__page--link\" href=\"\/profile\?page=2\">2</, response.body)
     assert_equal 10, response.body.scan("profile-post-delete-form").size
     assert_equal 10, response.body.scan("profile-post__checkbox").size
     assert_match "№1", response.body
@@ -368,8 +372,10 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     get profile_path, params: { page: 2 }
     assert_response :success
     assert_match "Мои видео (12)", response.body
-    assert_match "Страница 2 из 2", response.body
+    assert_equal 2, response.body.scan("Страница 2 из 2").size
     assert_match profile_path(page: 1), response.body
+    assert_match(/profile-pagination__page--link\" href=\"\/profile\">1</, response.body)
+    assert_match(/profile-pagination__page--current\" aria-current=\"page\">2</, response.body)
     assert_equal 2, response.body.scan("profile-post-delete-form").size
     assert_equal 2, response.body.scan("profile-post__checkbox").size
     assert_match "№11", response.body
@@ -433,9 +439,9 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
   test "user can export selected videos to zip with json manifest" do
     user = create_user(email: "profile-export@example.com")
-    first_post = create_post_record(title: "Экспортируемое видео 1", user:, tags: "rails", visibility: "private_post")
-    second_post = create_post_record(title: "Экспортируемое видео 2", user:, tags: "api", visibility: "public_post")
-    skipped_post = create_post_record(title: "Не должен попасть в архив", user:, tags: "skip", visibility: "public_post")
+    first_post = create_post_record(title: "Экспортируемое видео 1", user:, tags: "Film", visibility: "private_post")
+    second_post = create_post_record(title: "Экспортируемое видео 2", user:, tags: "Music", visibility: "public_post")
+    skipped_post = create_post_record(title: "Не должен попасть в архив", user:, tags: "Info", visibility: "public_post")
     sign_in_as(user)
 
     get export_videos_profile_path, params: { post_ids: [ first_post.id, second_post.id ], page: 1 }
@@ -481,8 +487,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
   test "user can import videos from exported archive" do
     owner = create_user(email: "profile-export-owner@example.com")
-    create_post_record(title: "Архивный ролик 1", user: owner, tags: "rails", visibility: "private_post")
-    create_post_record(title: "Архивный ролик 2", user: owner, tags: "backend", visibility: "public_post")
+    create_post_record(title: "Архивный ролик 1", user: owner, tags: "Film", visibility: "private_post")
+    create_post_record(title: "Архивный ролик 2", user: owner, tags: "AudioBook", visibility: "public_post")
 
     sign_in_as(owner)
     get export_videos_profile_path, params: { post_ids: owner.posts.ids }
@@ -528,8 +534,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
   test "archive import skips codec re-validation for exported videos" do
     owner = create_user(email: "profile-export-owner-codec@example.com")
-    create_post_record(title: "Кодек архив 1", user: owner, tags: "rails", visibility: "private_post")
-    create_post_record(title: "Кодек архив 2", user: owner, tags: "backend", visibility: "public_post")
+    create_post_record(title: "Кодек архив 1", user: owner, tags: "Film", visibility: "private_post")
+    create_post_record(title: "Кодек архив 2", user: owner, tags: "AudioBook", visibility: "public_post")
 
     sign_in_as(owner)
     get export_videos_profile_path, params: { post_ids: owner.posts.ids }
@@ -570,8 +576,8 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
 
   test "user can import videos from repacked archive with nested root folder" do
     owner = create_user(email: "profile-export-owner-nested@example.com")
-    create_post_record(title: "Вложенный архив 1", user: owner, tags: "rails", visibility: "private_post")
-    create_post_record(title: "Вложенный архив 2", user: owner, tags: "backend", visibility: "public_post")
+    create_post_record(title: "Вложенный архив 1", user: owner, tags: "Film", visibility: "private_post")
+    create_post_record(title: "Вложенный архив 2", user: owner, tags: "AudioBook", visibility: "public_post")
 
     sign_in_as(owner)
     get export_videos_profile_path, params: { post_ids: owner.posts.ids }
@@ -671,7 +677,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "filters posts by query on index" do
-    create_post_record(title: "Ruby on Rails обзор", tags: "rails, backend")
+    create_post_record(title: "Ruby on Rails обзор", tags: "Film, Info")
     create_post_record(title: "Go microservices")
 
     get root_path, params: { q: "rails" }
@@ -680,6 +686,19 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_match "Ruby on Rails обзор", response.body
     assert_no_match "Go microservices", response.body
     assert_match "Результаты поиска", response.body
+  end
+
+  test "filters posts by thematic tag on index" do
+    create_post_record(title: "Кинообзор", tags: "Film, Info")
+    create_post_record(title: "Музыкальный стрим", tags: "Music, Stream")
+
+    get root_path, params: { tag: "Film" }
+
+    assert_response :success
+    assert_match "Кинообзор", response.body
+    assert_no_match "Музыкальный стрим", response.body
+    assert_no_match "Тематика", response.body
+    assert_match "Film", response.body
   end
 
   test "user can add tags to post" do
@@ -694,7 +713,7 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
           post: {
             title: "Видео с тегами",
             description: "Проверка тегов",
-            tags: "#Rails, API Design, rails",
+            selected_tags: [ "Film", "Podcast", "film" ],
             video: uploaded_video
           }
         }
@@ -702,16 +721,17 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     end
 
     created_post = Post.order(:id).last
-    assert_equal "rails, api-design", created_post.tags
+    assert_equal "Film, Podcast", created_post.tags
 
     get post_path(created_post)
     assert_response :success
-    assert_match "#rails", response.body
-    assert_match "#api-design", response.body
+    assert_match "#Film", response.body
+    assert_match "#Podcast", response.body
 
-    get root_path, params: { q: "api-design" }
+    get root_path, params: { tag: "Podcast" }
     assert_response :success
     assert_match "Видео с тегами", response.body
+    assert_match "post-tag--active", response.body
   end
 
   test "user can like and dislike post with counters" do

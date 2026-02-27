@@ -345,6 +345,44 @@ main.container {
   font-size: 0.9rem;
 }
 
+.search-summary--right {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.page-head--filters {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.topic-filters {
+  margin: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+}
+
+.topic-filters .post-tag--filter {
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  background: #fff;
+  border-color: #cdd5df;
+}
+
+.topic-filters .post-tag--filter:hover {
+  background: #f8fafc;
+}
+
+.topic-filters .post-tag--filter.post-tag--active {
+  background: #111827;
+  border-color: #111827;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -782,6 +820,49 @@ main.container {
   font-size: 0.82rem;
 }
 
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.field .tag-picker__option {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tag-picker__input {
+  margin: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: #111827;
+}
+
+.tag-picker__input:checked + .tag-picker__text {
+  color: #111827;
+  font-weight: 700;
+}
+
+.tag-picker__input:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.tag-picker__text {
+  line-height: 1;
+}
+
 .field label.visibility-switch {
   position: relative;
   display: inline-flex;
@@ -1115,6 +1196,17 @@ main.container {
     flex-direction: column;
   }
 
+  .page-head--filters {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .topic-filters {
+    width: 100%;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
   .post-card,
   .panel {
     padding: 14px;
@@ -1420,6 +1512,17 @@ main.container {
   font-size: 0.74rem;
 }
 
+.post-tag--active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.post-tag--active:hover {
+  background: #1f2937;
+  color: #fff;
+}
+
 .profile-card__title {
   margin: 0;
   font-size: 1.25rem;
@@ -1470,11 +1573,33 @@ main.container {
   gap: 10px;
 }
 
-.profile-bulk-actions {
+.profile-posts-head {
   margin: 0 0 10px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-posts-head h2 {
+  margin: 0;
+}
+
+.profile-list-controls {
+  margin: 0 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.profile-bulk-actions {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -1486,7 +1611,7 @@ main.container {
 }
 
 .profile-bulk-actions__toggle {
-  margin-right: auto;
+  margin-right: 0;
 }
 
 .profile-archive-panel__hint {
@@ -1611,9 +1736,49 @@ main.container {
   gap: 8px;
 }
 
+.profile-pagination--top {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 .profile-pagination__info {
   font-size: 0.84rem;
   color: var(--muted);
+}
+
+.profile-pagination__pages {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-pagination__page {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-pagination__page--link:hover {
+  background: #f3f4f6;
+}
+
+.profile-pagination__page--current {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
 }
 
 .profile-post__head {
@@ -1694,7 +1859,19 @@ main.container {
 }
 
 @media (max-width: 520px) {
+  .profile-posts-head {
+    align-items: stretch;
+  }
+
+  .profile-posts-head .profile-bulk-delete-form {
+    width: 100%;
+  }
+
   .profile-bulk-actions {
+    justify-content: flex-start;
+  }
+
+  .profile-list-controls .profile-pagination {
     justify-content: flex-start;
   }
 

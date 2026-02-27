@@ -52,16 +52,9 @@
 <section class="panel"
          data-controller="profile-bulk-selection"
          data-profile-bulk-selection-storage-key-value="profile-selected-posts-<%= @user.id %>">
-  <h2>Мои видео (<%= @posts_count %>)</h2>
-
-  <% if @profile_posts.any? %>
-    <div class="profile-bulk-actions">
-      <button type="button"
-              class="button button--secondary button--small profile-bulk-actions__toggle"
-              data-action="profile-bulk-selection#selectAllPosts"
-              data-profile-bulk-selection-target="toggleButton">
-        ВЫДЕЛИТЬ ВСЕ ПОСТЫ
-      </button>
+  <div class="profile-posts-head">
+    <h2>Мои видео (<%= @posts_count %>)</h2>
+    <% if @profile_posts.any? %>
       <%= form_with url: destroy_selected_posts_profile_path,
                     method: :delete,
                     id: "profile-bulk-delete-form",
@@ -75,6 +68,24 @@
                        formaction: export_videos_profile_path,
                        formmethod: "get" %>
       <% end %>
+    <% end %>
+  </div>
+
+  <% if @profile_posts.any? %>
+    <div class="profile-list-controls">
+      <div class="profile-bulk-actions">
+        <button type="button"
+                class="button button--secondary button--small profile-bulk-actions__toggle"
+                data-action="profile-bulk-selection#selectAllPosts"
+                data-profile-bulk-selection-target="toggleButton">
+          ВЫДЕЛИТЬ ВСЕ ПОСТЫ
+        </button>
+      </div>
+
+      <%= render "profiles/posts_pagination",
+                 current_page: @current_page,
+                 total_pages: @total_pages,
+                 extra_class: "profile-pagination--top" %>
     </div>
 
     <div class="profile-posts">
@@ -133,17 +144,7 @@
       <% end %>
     </div>
 
-    <% if @total_pages > 1 %>
-      <nav class="profile-pagination" aria-label="Пагинация постов">
-        <% if @current_page > 1 %>
-          <%= link_to "Назад", profile_path(page: @current_page - 1), class: "button button--secondary button--small" %>
-        <% end %>
-        <span class="profile-pagination__info">Страница <%= @current_page %> из <%= @total_pages %></span>
-        <% if @current_page < @total_pages %>
-          <%= link_to "Вперед", profile_path(page: @current_page + 1), class: "button button--secondary button--small" %>
-        <% end %>
-      </nav>
-    <% end %>
+    <%= render "profiles/posts_pagination", current_page: @current_page, total_pages: @total_pages %>
   <% else %>
     <p class="empty">Вы пока не опубликовали ни одного видео.</p>
   <% end %>

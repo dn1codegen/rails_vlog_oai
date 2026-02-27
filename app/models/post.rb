@@ -8,12 +8,12 @@ class Post < ApplicationRecord
     video/x-matroska
   ].freeze
   MODERN_VIDEO_CODECS = %w[av1 hevc h264 vp9].freeze
+  ALLOWED_TAGS = %w[Film Music AudioBook Info Stream Podcast].freeze
   TAG_SPLIT_REGEX = /[,\n]/
-  MAX_TAG_COUNT = 10
-  MAX_TAG_LENGTH = 30
 
   has_one_attached :video
   has_one_attached :thumbnail
+  has_one_attached :cover_image
   has_many_attached :preview_frames
   belongs_to :user
   has_many :comments, dependent: :destroy
@@ -27,7 +27,6 @@ class Post < ApplicationRecord
   validates :title, presence: true, length: { maximum: 120 }
   validates :description, length: { maximum: 5000 }
   validates :tags, length: { maximum: 500 }
-  validate :tags_are_valid
 
   before_validation :assign_title_from_video, on: :create
   before_validation :normalize_tags
@@ -44,7 +43,15 @@ class Post < ApplicationRecord
   end
 
   def tag_list
-    tags.to_s.split(",").map(&:strip).reject(&:blank?)
+    normalize_tag_values(tags)
+  end
+
+  def selected_tags
+    tag_list
+  end
+
+  def selected_tags=(values)
+    self.tags = normalize_tag_values(values).join(", ")
   end
 
   def visible_to?(user)
@@ -61,6 +68,13 @@ class Post < ApplicationRecord
     end
   end
 
+  def list_preview_image
+    return cover_image if cover_image.attached?
+    return thumbnail if thumbnail.attached?
+
+    nil
+  end
+
   def refresh_reaction_counters!
     likes = post_reactions.where(kind: PostReaction.kinds.fetch("like")).count
     dislikes = post_reactions.where(kind: PostReaction.kinds.fetch("dislike")).count
@@ -71,36 +85,28 @@ class Post < ApplicationRecord
   private
 
   def normalize_tags
-    normalized_tags = tags.to_s
-                          .split(TAG_SPLIT_REGEX)
-                          .map { |tag| normalize_tag(tag) }
-                          .reject(&:blank?)
-                          .uniq
-
-    self.tags = normalized_tags.join(", ")
+    self.tags = normalize_tag_values(tags).join(", ")
   end
 
-  def normalize_tag(tag)
-    tag.to_s
-       .strip
-       .delete_prefix("#")
-       .downcase
-       .gsub(/\s+/, "-")
-       .gsub(/[^\p{L}\p{N}_-]/, "")
-       .gsub(/-+/, "-")
-       .gsub(/\A-|-+\z/, "")
-  end
-
-  def tags_are_valid
-    current_tags = tag_list
-    if current_tags.size > MAX_TAG_COUNT
-      errors.add(:tags, "можно указать не более #{MAX_TAG_COUNT} тегов")
+  def normalize_tag_values(raw_tags)
+    values = if raw_tags.is_a?(Array)
+      raw_tags
+    else
+      raw_tags.to_s.split(TAG_SPLIT_REGEX)
     end
 
-    too_long_tag = current_tags.find { |tag| tag.length > MAX_TAG_LENGTH }
-    return unless too_long_tag
+    values.filter_map { |tag| canonical_tag(tag) }.uniq
+  end
 
-    errors.add(:tags, "тег ##{too_long_tag} длиннее #{MAX_TAG_LENGTH} символов")
+  def canonical_tag(tag)
+    normalized = tag.to_s
+                    .strip
+                    .delete_prefix("#")
+                    .gsub(/[^\p{L}\p{N}]+/, "")
+                    .downcase
+    return if normalized.blank?
+
+    ALLOWED_TAGS.find { |allowed_tag| allowed_tag.downcase == normalized }
   end
 
   def assign_title_from_video
