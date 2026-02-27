@@ -17,6 +17,16 @@ class PostTest < ActiveSupport::TestCase
     end
   end
 
+  test "valid with supported audio container and codec" do
+    post = Post.new(user: @user, title: "Audio release", tags: "Music")
+    attach_sample_video(post, filename: "track.m4a", content_type: "audio/mp4")
+
+    result = VideoCodecInspector::Result.new(status: :ok, codec: "aac")
+    with_forced_result(result) do
+      assert post.valid?
+    end
+  end
+
   test "invalid with unsupported container type" do
     post = Post.new(user: @user, title: "Legacy video")
     attach_sample_video(post, filename: "legacy.avi", content_type: "video/x-msvideo")

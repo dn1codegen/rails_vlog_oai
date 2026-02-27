@@ -31,7 +31,7 @@ class PostsController < ApplicationController
   end
 
   def show
-    if @post.video.attached? && (!@post.thumbnail.attached? || !@post.preview_frames.attached?)
+    if @post.video.attached? && @post.video_media? && (!@post.thumbnail.attached? || !@post.preview_frames.attached?)
       @post.request_thumbnail_generation
       @post.reload
     end

@@ -2,8 +2,15 @@
   <div class="watch-main">
     <article class="post-card">
       <% if @post.video.attached? %>
-        <div class="post-card-media">
-          <% if @post.thumbnail.attached? %>
+        <div class="post-card-media <%= "post-card-media--audio" if @post.audio_media? %>">
+          <% if @post.audio_media? %>
+            <% if @post.list_preview_image.present? %>
+              <%= image_tag @post.list_preview_image,
+                            class: "video video-preview",
+                            alt: "Обложка #{@post.title}" %>
+            <% end %>
+            <%= audio_tag url_for(@post.video), controls: true, preload: "metadata", class: "audio-player" %>
+          <% elsif @post.thumbnail.attached? %>
             <% frame_urls = @preview_frames.map { |attachment| url_for(attachment) } %>
             <% frame_urls = [url_for(@post.thumbnail)] if frame_urls.empty? %>
 
@@ -50,14 +57,16 @@
       <% if @media_info.present? %>
         <div class="media-tags" aria-label="Информация о видео">
           <% if @media_info.status == :ok %>
-            <span class="media-tag">
-              <strong>Видео:</strong>
-              <%= @media_info.video_codec.presence || "не определен" %>
-              •
-              <%= @media_info.video_resolution.presence || "не определено" %>
-              •
-              <%= format_bitrate(@media_info.video_bitrate) %>
-            </span>
+            <% if @post.video_media? || @media_info.video_codec.present? %>
+              <span class="media-tag">
+                <strong>Видео:</strong>
+                <%= @media_info.video_codec.presence || "не определен" %>
+                •
+                <%= @media_info.video_resolution.presence || "не определено" %>
+                •
+                <%= format_bitrate(@media_info.video_bitrate) %>
+              </span>
+            <% end %>
             <span class="media-tag">
               <strong>Аудио:</strong>
               <%= @media_info.audio_codec.presence || "аудио дорожка отсутствует" %>

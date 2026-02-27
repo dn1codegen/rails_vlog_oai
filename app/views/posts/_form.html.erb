@@ -126,16 +126,16 @@
   <% end %>
 
   <div class="field">
-    <%= form.label :video, "Видео" %>
+    <%= form.label :video, "Видео / Аудио" %>
     <%= form.file_field :video,
-                        accept: ".mp4,.webm,.mov,.mkv,video/mp4,video/webm,video/quicktime,video/x-matroska",
+                        accept: ".mp4,.webm,.mov,.mkv,.m4a,.m4b,.flac,.opus,.opues,.alac,video/mp4,video/webm,video/quicktime,video/x-matroska,audio/mp4,audio/x-m4a,audio/x-m4b,audio/flac,audio/x-flac,audio/ogg,audio/opus,audio/alac",
                         data: { post_form_target: "video", action: "change->post-form#onVideoSelected" } %>
     <small>
-      Поддерживаются современные кодеки: AV1, H.265/HEVC, VP9 и H.264.
+      Поддерживаются видеоформаты и аудиоформаты (opus, m4a, flac, alac, m4b).
       Сервер проверяет кодек через ffprobe.
     </small>
     <% if post.video.attached? %>
-      <small>Текущее видео сохранено. Выберите файл только если хотите заменить его.</small>
+      <small>Текущий медиафайл сохранен. Выберите файл только если хотите заменить его.</small>
     <% end %>
   </div>
 

@@ -1,13 +1,25 @@
 require "open3"
 
 class Post < ApplicationRecord
-  MODERN_VIDEO_CONTENT_TYPES = %w[
+  SUPPORTED_VIDEO_CONTENT_TYPES = %w[
     video/mp4
     video/webm
     video/quicktime
     video/x-matroska
   ].freeze
-  MODERN_VIDEO_CODECS = %w[av1 hevc h264 vp9].freeze
+  SUPPORTED_AUDIO_CONTENT_TYPES = %w[
+    audio/ogg
+    audio/opus
+    audio/mp4
+    audio/x-m4a
+    audio/x-m4b
+    audio/flac
+    audio/x-flac
+    audio/alac
+  ].freeze
+  SUPPORTED_MEDIA_CONTENT_TYPES = (SUPPORTED_VIDEO_CONTENT_TYPES + SUPPORTED_AUDIO_CONTENT_TYPES).freeze
+  SUPPORTED_VIDEO_CODECS = %w[av1 hevc h264 vp9].freeze
+  SUPPORTED_AUDIO_CODECS = %w[opus flac alac aac].freeze
   ALLOWED_TAGS = %w[Film Music AudioBook Info Stream Podcast].freeze
   TAG_SPLIT_REGEX = /[,\n]/
 
@@ -60,6 +72,7 @@ class Post < ApplicationRecord
 
   def request_thumbnail_generation
     return unless video.attached?
+    return unless video_media?
 
     if sync_thumbnail_generation?
       GeneratePostThumbnailJob.perform_now(self)
@@ -73,6 +86,14 @@ class Post < ApplicationRecord
     return thumbnail if thumbnail.attached?
 
     nil
+  end
+
+  def video_media?
+    media_content_type.start_with?("video/")
+  end
+
+  def audio_media?
+    media_content_type.start_with?("audio/")
   end
 
   def refresh_reaction_counters!
@@ -162,9 +183,9 @@ class Post < ApplicationRecord
     return unless video.attached?
 
     content_type = video.blob.content_type
-    return if MODERN_VIDEO_CONTENT_TYPES.include?(content_type)
+    return if SUPPORTED_MEDIA_CONTENT_TYPES.include?(content_type)
 
-    errors.add(:video, "контейнер #{content_type.inspect} не поддерживается")
+    errors.add(:video, "контейнер #{content_type.inspect} не поддерживается. Разрешены видео и аудио-форматы")
   end
 
   def video_codec_supported
@@ -174,9 +195,10 @@ class Post < ApplicationRecord
 
     case inspection.status
     when :ok
-      return if MODERN_VIDEO_CODECS.include?(inspection.codec)
+      allowed_codecs = supported_codecs
+      return if allowed_codecs.include?(inspection.codec)
 
-      errors.add(:video, "кодек #{inspection.codec} не поддерживается. Разрешены: #{MODERN_VIDEO_CODECS.join(', ')}")
+      errors.add(:video, "кодек #{inspection.codec} не поддерживается. Разрешены: #{allowed_codecs.join(', ')}")
     when :unavailable, :error, :empty
       return unless require_codec_verification?
 
@@ -200,5 +222,18 @@ class Post < ApplicationRecord
   def sync_thumbnail_generation?
     default = Rails.env.development? ? "true" : "false"
     ActiveModel::Type::Boolean.new.cast(ENV.fetch("THUMBNAIL_SYNC", default))
+  end
+
+  def media_content_type
+    return "" unless video.attached?
+
+    video.blob.content_type.to_s
+  end
+
+  def supported_codecs
+    return SUPPORTED_AUDIO_CODECS if audio_media?
+    return SUPPORTED_VIDEO_CODECS if video_media?
+
+    (SUPPORTED_VIDEO_CODECS + SUPPORTED_AUDIO_CODECS).uniq
   end
 end

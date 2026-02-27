@@ -50,6 +50,33 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     assert_equal user.email, comment.author_name
   end
 
+  test "user creates music post with m4a audio format" do
+    user = create_user(email: "music-author@example.com")
+    sign_in_as(user)
+
+    with_forced_result(VideoCodecInspector::Result.new(status: :ok, codec: "aac")) do
+      assert_no_enqueued_jobs only: GeneratePostThumbnailJob do
+        assert_difference("Post.count", 1) do
+          post posts_path, params: {
+            post: {
+              title: "Аудио релиз",
+              description: "Тест m4a формата",
+              selected_tags: [ "Music" ],
+              video: uploaded_audio
+            }
+          }
+        end
+      end
+    end
+
+    created_post = Post.order(:id).last
+    assert_equal "audio/mp4", created_post.video.blob.content_type
+
+    get post_path(created_post)
+    assert_response :success
+    assert_match(/<audio/, response.body)
+  end
+
   test "uses filename as post title when title is blank" do
     user = create_user(email: "auto-title@example.com")
     sign_in_as(user)
@@ -882,6 +909,14 @@ class VlogFlowTest < ActionDispatch::IntegrationTest
     Rack::Test::UploadedFile.new(
       Rails.root.join("test/fixtures/files/sample.mp4"),
       "video/mp4"
+    )
+  end
+
+  def uploaded_audio
+    Rack::Test::UploadedFile.new(
+      Rails.root.join("test/fixtures/files/sample.mp4"),
+      "audio/mp4",
+      original_filename: "track.m4a"
     )
   end
 

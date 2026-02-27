@@ -710,6 +710,16 @@ main.container {
   border-radius: 0;
 }
 
+.post-card-media--audio {
+  background: var(--surface-muted);
+  padding: 10px;
+}
+
+.audio-player {
+  width: 100%;
+  display: block;
+}
+
 .video-player {
   position: relative;
 }
